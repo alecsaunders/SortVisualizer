@@ -20,16 +20,20 @@ class SoundGenerator: ObservableObject {
     private let mixer = AVAudioMixerNode()
     private let sampleRate: Double = 44100
     private var activeNodeCount = 0
+    private var isEngineSetup = false
     
     // Sound parameters matching Sound of Sorting
     private let minFrequency: Double = 120.0  // Hz
     private let maxFrequency: Double = 1212.0 // Hz
     
     init() {
-        setupAudioEngine()
+        // Don't setup audio engine in init - do it lazily when needed
     }
     
     private func setupAudioEngine() {
+        guard !isEngineSetup else { return }
+        isEngineSetup = true
+        
         audioEngine.attach(mixer)
         audioEngine.connect(mixer, to: audioEngine.mainMixerNode, format: nil)
         
@@ -37,11 +41,15 @@ class SoundGenerator: ObservableObject {
             try audioEngine.start()
         } catch {
             print("Failed to start audio engine: \(error)")
+            isEngineSetup = false
         }
     }
     
     func playComparison(value1: Int, value2: Int, maxValue: Int, duration: Double = 0.05) {
         guard isEnabled else { return }
+        
+        // Setup audio engine on first use
+        setupAudioEngine()
         
         // Calculate frequencies from values (scaled to 120-1212 Hz range)
         let freq1 = frequencyForValue(value1, maxValue: maxValue)

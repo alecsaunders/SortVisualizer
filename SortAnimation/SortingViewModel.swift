@@ -54,6 +54,7 @@ class SortingViewModel: ObservableObject {
     }
     @Published var soundEnabled: Bool = false {
         didSet {
+            guard soundGenerator.isEnabled != soundEnabled else { return }
             soundGenerator.isEnabled = soundEnabled
         }
     }
@@ -72,7 +73,11 @@ class SortingViewModel: ObservableObject {
         // Sync soundGenerator.isEnabled back to soundEnabled
         soundGenerator.$isEnabled
             .sink { [weak self] isEnabled in
-                self?.soundEnabled = isEnabled
+                guard let self = self else { return }
+                // Prevent circular updates
+                if self.soundEnabled != isEnabled {
+                    self.soundEnabled = isEnabled
+                }
             }
             .store(in: &cancellables)
         
