@@ -1,0 +1,625 @@
+//
+//  SortingViewModel.swift
+//  SortAnimation
+//
+//  Created by Saunders, Alec on 1/17/26.
+//
+
+import Foundation
+import SwiftUI
+import Combine
+
+@MainActor
+class SortingViewModel: ObservableObject {
+    @Published var bars: [Bar] = []
+    @Published var selectedAlgorithm: SortAlgorithm = .bubble
+    @Published var speed: Double = 2 // milliseconds
+    @Published var numberOfElements: Int = 100
+    @Published var isSorting: Bool = false
+    
+    private var sortTask: Task<Void, Never>?
+    
+    init() {
+        reset()
+    }
+    
+    func reset() {
+        sortTask?.cancel()
+        isSorting = false
+        
+        let values = Array(1...numberOfElements).shuffled()
+        bars.removeAll(keepingCapacity: true) // Keep capacity for reuse
+        bars.reserveCapacity(numberOfElements) // Ensure capacity
+        bars = values.map { Bar(value: $0, state: .unsorted) }
+    }
+    
+    func startSort() {
+        guard !isSorting else { return }
+        
+        isSorting = true
+        
+        sortTask = Task {
+            switch selectedAlgorithm {
+            case .bubble:
+                await bubbleSort()
+            case .selection:
+                await selectionSort()
+            case .merge:
+                await mergeSort()
+            case .insertion:
+                await insertionSort()
+            case .radix:
+                await radixSort()
+            case .quick:
+                await quickSort()
+            case .heap:
+                await heapSort()
+            case .shell:
+                await shellSort()
+            case .counting:
+                await countingSort()
+            case .cocktail:
+                await cocktailSort()
+            }
+            
+            if !Task.isCancelled {
+                // Mark all as sorted
+                for index in bars.indices {
+                    bars[index].state = .sorted
+                }
+                isSorting = false
+            }
+        }
+    }
+    
+    private func bubbleSort() async {
+        let n = bars.count
+        
+        for i in 0..<n {
+            guard !Task.isCancelled else { break }
+            
+            var swapped = false
+            for j in 0..<(n - i - 1) {
+                guard !Task.isCancelled else { break }
+                
+                // Mark bars being compared
+                bars[j].state = .comparing
+                bars[j + 1].state = .comparing
+                
+                if bars[j].value > bars[j + 1].value {
+                    // Perform swap with animation
+                    await swapBars(at: j, and: j + 1)
+                    swapped = true
+                }
+                
+                // Reset state after comparison
+                if bars[j].state == .comparing {
+                    bars[j].state = .unsorted
+                }
+                if bars[j + 1].state == .comparing {
+                    bars[j + 1].state = .unsorted
+                }
+            }
+            
+            // Mark the last element of this pass as sorted
+            if i < n {
+                bars[n - i - 1].state = .sorted
+            }
+            
+            if !swapped {
+                break
+            }
+        }
+    }
+    
+    private func selectionSort() async {
+        let n = bars.count
+        
+        for i in 0..<n {
+            guard !Task.isCancelled else { break }
+            
+            var minIndex = i
+            bars[minIndex].state = .comparing
+            
+            for j in (i + 1)..<n {
+                guard !Task.isCancelled else { break }
+                
+                bars[j].state = .comparing
+                
+                // Small delay to visualize comparison
+                try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+                
+                if bars[j].value < bars[minIndex].value {
+                    // Reset previous minimum
+                    if bars[minIndex].state == .comparing {
+                        bars[minIndex].state = .unsorted
+                    }
+                    minIndex = j
+                    bars[minIndex].state = .comparing
+                } else {
+                    // Reset if not the minimum
+                    if bars[j].state == .comparing && j != minIndex {
+                        bars[j].state = .unsorted
+                    }
+                }
+            }
+            
+            if minIndex != i {
+                await swapBars(at: i, and: minIndex)
+            } else {
+                // No swap needed, just mark as sorted
+                bars[i].state = .sorted
+            }
+            
+            // Mark the position as sorted
+            bars[i].state = .sorted
+        }
+    }
+    
+    @MainActor
+    private func swapBars(at index1: Int, and index2: Int) async {
+        guard index1 != index2, index1 >= 0, index2 >= 0, 
+              index1 < bars.count, index2 < bars.count else { return }
+        
+        // Calculate the distance between bars
+        let distance = CGFloat(abs(index2 - index1))
+        
+        // Set offsets for animation
+        if index1 < index2 {
+            bars[index1].offset = distance
+            bars[index2].offset = -distance
+        } else {
+            bars[index1].offset = -distance
+            bars[index2].offset = distance
+        }
+        
+        // Animate the swap
+        withAnimation(.linear(duration: speed / 1000.0)) {
+            bars[index1].offset = bars[index1].offset
+            bars[index2].offset = bars[index2].offset
+        }
+        
+        // Wait for animation plus speed delay
+        try? await Task.sleep(for: .milliseconds(Int(speed)))
+        
+        // Actually swap the bars
+        bars.swapAt(index1, index2)
+        
+        // Reset offsets
+        bars[index1].offset = 0
+        bars[index2].offset = 0
+    }
+    
+    private func insertionSort() async {
+        let n = bars.count
+        
+        for i in 1..<n {
+            guard !Task.isCancelled else { break }
+            
+            let key = bars[i]
+            bars[i].state = .comparing
+            var j = i - 1
+            
+            // Find the correct position for the key
+            while j >= 0 && bars[j].value > key.value {
+                guard !Task.isCancelled else { break }
+                
+                bars[j].state = .comparing
+                bars[j + 1].state = .comparing
+                
+                // Shift element to the right
+                await swapBars(at: j, and: j + 1)
+                
+                bars[j + 1].state = .unsorted
+                j -= 1
+            }
+            
+            // Mark elements before current position as sorted
+            for k in 0...i {
+                if bars[k].state != .comparing {
+                    bars[k].state = .unsorted
+                }
+            }
+        }
+    }
+    
+    private func mergeSort() async {
+        await mergeSortHelper(start: 0, end: bars.count - 1)
+    }
+    
+    private func mergeSortHelper(start: Int, end: Int) async {
+        guard start < end, !Task.isCancelled else { return }
+        
+        let mid = start + (end - start) / 2
+        
+        // Sort left half
+        await mergeSortHelper(start: start, end: mid)
+        
+        // Sort right half
+        await mergeSortHelper(start: mid + 1, end: end)
+        
+        // Merge the two halves
+        await merge(start: start, mid: mid, end: end)
+    }
+    
+    private func merge(start: Int, mid: Int, end: Int) async {
+        guard !Task.isCancelled else { return }
+        
+        // Create copies of the subarrays
+        let leftArray = Array(bars[start...mid])
+        let rightArray = Array(bars[(mid + 1)...end])
+        
+        var i = 0
+        var j = 0
+        var k = start
+        
+        // Merge the arrays back
+        while i < leftArray.count && j < rightArray.count {
+            guard !Task.isCancelled else { break }
+            
+            // Mark as comparing
+            bars[k].state = .comparing
+            
+            if leftArray[i].value <= rightArray[j].value {
+                bars[k] = leftArray[i]
+                bars[k].state = .comparing
+                i += 1
+            } else {
+                bars[k] = rightArray[j]
+                bars[k].state = .comparing
+                j += 1
+            }
+            
+            // Delay for visualization
+            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            bars[k].state = .unsorted
+            k += 1
+        }
+        
+        // Copy remaining elements from left array
+        while i < leftArray.count {
+            guard !Task.isCancelled else { break }
+            bars[k] = leftArray[i]
+            bars[k].state = .comparing
+            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            bars[k].state = .unsorted
+            i += 1
+            k += 1
+        }
+        
+        // Copy remaining elements from right array
+        while j < rightArray.count {
+            guard !Task.isCancelled else { break }
+            bars[k] = rightArray[j]
+            bars[k].state = .comparing
+            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            bars[k].state = .unsorted
+            j += 1
+            k += 1
+        }
+    }
+    
+    private func radixSort() async {
+        guard !Task.isCancelled else { return }
+        
+        let maxValue = bars.max(by: { $0.value < $1.value })?.value ?? 0
+        var exp = 1
+        
+        while maxValue / exp > 0 {
+            guard !Task.isCancelled else { break }
+            await countingSort(exp: exp)
+            exp *= 10
+        }
+    }
+    
+    private func countingSort(exp: Int) async {
+        guard !Task.isCancelled else { return }
+        
+        let n = bars.count
+        var output = [Bar]()
+        output.reserveCapacity(n) // Pre-allocate capacity for better performance
+        output.append(contentsOf: repeatElement(Bar(value: 0), count: n))
+        var count = Array(repeating: 0, count: 10)
+        
+        // Store count of occurrences
+        for i in 0..<n {
+            let digit = (bars[i].value / exp) % 10
+            count[digit] += 1
+        }
+        
+        // Change count[i] to contain actual position
+        for i in 1..<10 {
+            count[i] += count[i - 1]
+        }
+        
+        // Build output array
+        for i in stride(from: n - 1, through: 0, by: -1) {
+            guard !Task.isCancelled else { break }
+            
+            bars[i].state = .comparing
+            
+            let digit = (bars[i].value / exp) % 10
+            output[count[digit] - 1] = bars[i]
+            count[digit] -= 1
+            
+            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            bars[i].state = .unsorted
+        }
+        
+        // Copy output array to bars with animation
+        for i in 0..<n {
+            guard !Task.isCancelled else { break }
+            
+            if bars[i].id != output[i].id {
+                bars[i] = output[i]
+                bars[i].state = .comparing
+                try? await Task.sleep(for: .milliseconds(Int(speed)))
+                bars[i].state = .unsorted
+            }
+        }
+    }
+    
+    // MARK: - Quick Sort
+    
+    private func quickSort() async {
+        await quickSortHelper(low: 0, high: bars.count - 1)
+    }
+    
+    private func quickSortHelper(low: Int, high: Int) async {
+        guard low < high, !Task.isCancelled else { return }
+        
+        let pivotIndex = await partition(low: low, high: high)
+        
+        await quickSortHelper(low: low, high: pivotIndex - 1)
+        await quickSortHelper(low: pivotIndex + 1, high: high)
+    }
+    
+    private func partition(low: Int, high: Int) async -> Int {
+        guard !Task.isCancelled else { return low }
+        
+        let pivot = bars[high]
+        bars[high].state = .comparing
+        var i = low - 1
+        
+        for j in low..<high {
+            guard !Task.isCancelled else { break }
+            
+            bars[j].state = .comparing
+            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            
+            if bars[j].value < pivot.value {
+                i += 1
+                if i != j {
+                    await swapBars(at: i, and: j)
+                }
+            }
+            
+            if bars[j].state == .comparing {
+                bars[j].state = .unsorted
+            }
+        }
+        
+        await swapBars(at: i + 1, and: high)
+        bars[i + 1].state = .sorted
+        
+        return i + 1
+    }
+    
+    // MARK: - Heap Sort
+    
+    private func heapSort() async {
+        let n = bars.count
+        
+        // Build max heap
+        for i in stride(from: n / 2 - 1, through: 0, by: -1) {
+            guard !Task.isCancelled else { break }
+            await heapify(n: n, root: i)
+        }
+        
+        // Extract elements from heap one by one
+        for i in stride(from: n - 1, through: 1, by: -1) {
+            guard !Task.isCancelled else { break }
+            
+            bars[0].state = .comparing
+            bars[i].state = .comparing
+            
+            await swapBars(at: 0, and: i)
+            bars[i].state = .sorted
+            
+            await heapify(n: i, root: 0)
+        }
+        
+        if !Task.isCancelled && n > 0 {
+            bars[0].state = .sorted
+        }
+    }
+    
+    private func heapify(n: Int, root: Int) async {
+        guard !Task.isCancelled else { return }
+        
+        var largest = root
+        let left = 2 * root + 1
+        let right = 2 * root + 2
+        
+        if left < n {
+            bars[left].state = .comparing
+            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            
+            if bars[left].value > bars[largest].value {
+                largest = left
+            }
+            bars[left].state = .unsorted
+        }
+        
+        if right < n {
+            bars[right].state = .comparing
+            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            
+            if bars[right].value > bars[largest].value {
+                largest = right
+            }
+            bars[right].state = .unsorted
+        }
+        
+        if largest != root {
+            bars[root].state = .comparing
+            bars[largest].state = .comparing
+            await swapBars(at: root, and: largest)
+            bars[root].state = .unsorted
+            bars[largest].state = .unsorted
+            
+            await heapify(n: n, root: largest)
+        }
+    }
+    
+    // MARK: - Shell Sort
+    
+    private func shellSort() async {
+        let n = bars.count
+        var gap = n / 2
+        
+        while gap > 0 {
+            guard !Task.isCancelled else { break }
+            
+            for i in gap..<n {
+                guard !Task.isCancelled else { break }
+                
+                let temp = bars[i]
+                bars[i].state = .comparing
+                var j = i
+                
+                while j >= gap && bars[j - gap].value > temp.value {
+                    guard !Task.isCancelled else { break }
+                    
+                    bars[j - gap].state = .comparing
+                    bars[j].state = .comparing
+                    
+                    await swapBars(at: j, and: j - gap)
+                    
+                    bars[j].state = .unsorted
+                    j -= gap
+                }
+                
+                bars[j].state = .unsorted
+            }
+            
+            gap /= 2
+        }
+    }
+    
+    // MARK: - Counting Sort
+    
+    private func countingSort() async {
+        guard !Task.isCancelled else { return }
+        
+        let maxValue = bars.max(by: { $0.value < $1.value })?.value ?? 0
+        let minValue = bars.min(by: { $0.value < $1.value })?.value ?? 0
+        let range = maxValue - minValue + 1
+        
+        var count = Array(repeating: 0, count: range)
+        var output = [Bar]()
+        output.reserveCapacity(bars.count)
+        output.append(contentsOf: repeatElement(Bar(value: 0), count: bars.count))
+        
+        // Store count of each element
+        for i in 0..<bars.count {
+            guard !Task.isCancelled else { break }
+            bars[i].state = .comparing
+            count[bars[i].value - minValue] += 1
+            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            bars[i].state = .unsorted
+        }
+        
+        // Change count to actual positions
+        for i in 1..<range {
+            count[i] += count[i - 1]
+        }
+        
+        // Build output array
+        for i in stride(from: bars.count - 1, through: 0, by: -1) {
+            guard !Task.isCancelled else { break }
+            
+            bars[i].state = .comparing
+            let index = bars[i].value - minValue
+            output[count[index] - 1] = bars[i]
+            count[index] -= 1
+            
+            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            bars[i].state = .unsorted
+        }
+        
+        // Copy output to bars with animation
+        for i in 0..<bars.count {
+            guard !Task.isCancelled else { break }
+            
+            if bars[i].id != output[i].id {
+                bars[i] = output[i]
+                bars[i].state = .comparing
+                try? await Task.sleep(for: .milliseconds(Int(speed)))
+                bars[i].state = .unsorted
+            }
+        }
+    }
+    
+    // MARK: - Cocktail Shaker Sort
+    
+    private func cocktailSort() async {
+        var swapped = true
+        var start = 0
+        var end = bars.count - 1
+        
+        while swapped {
+            guard !Task.isCancelled else { break }
+            
+            swapped = false
+            
+            // Forward pass (left to right)
+            for i in start..<end {
+                guard !Task.isCancelled else { break }
+                
+                bars[i].state = .comparing
+                bars[i + 1].state = .comparing
+                
+                if bars[i].value > bars[i + 1].value {
+                    await swapBars(at: i, and: i + 1)
+                    swapped = true
+                }
+                
+                bars[i].state = .unsorted
+                bars[i + 1].state = .unsorted
+            }
+            
+            if !swapped {
+                break
+            }
+            
+            bars[end].state = .sorted
+            end -= 1
+            swapped = false
+            
+            // Backward pass (right to left)
+            for i in stride(from: end, through: start, by: -1) {
+                guard !Task.isCancelled else { break }
+                
+                bars[i].state = .comparing
+                bars[i + 1].state = .comparing
+                
+                if bars[i].value > bars[i + 1].value {
+                    await swapBars(at: i, and: i + 1)
+                    swapped = true
+                }
+                
+                bars[i].state = .unsorted
+                bars[i + 1].state = .unsorted
+            }
+            
+            bars[start].state = .sorted
+            start += 1
+        }
+        
+        // Mark remaining unsorted as sorted
+        for i in start...end {
+            bars[i].state = .sorted
+        }
+    }
+}
