@@ -52,16 +52,30 @@ class SortingViewModel: ObservableObject {
             soundGenerator.sustainTime = soundSustain
         }
     }
+    @Published var soundEnabled: Bool = false {
+        didSet {
+            soundGenerator.isEnabled = soundEnabled
+        }
+    }
     
     let soundGenerator = SoundGenerator()
     
     private var sortTask: Task<Void, Never>?
     private var stepContinuation: CheckedContinuation<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
     
     init() {
         loadColorScheme()
         soundGenerator.volume = Float(soundVolume)
         soundGenerator.sustainTime = soundSustain
+        
+        // Sync soundGenerator.isEnabled back to soundEnabled
+        soundGenerator.$isEnabled
+            .sink { [weak self] isEnabled in
+                self?.soundEnabled = isEnabled
+            }
+            .store(in: &cancellables)
+        
         reset()
     }
     

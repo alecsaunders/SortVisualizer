@@ -146,12 +146,9 @@ struct InspectorView: View {
                     Text("Sound")
                         .font(.headline)
                     
-                    Toggle("Enable Sound", isOn: Binding(
-                        get: { viewModel.soundGenerator.isEnabled },
-                        set: { viewModel.soundGenerator.isEnabled = $0 }
-                    ))
+                    Toggle("Enable Sound", isOn: $viewModel.soundEnabled)
                     
-                    if viewModel.soundGenerator.isEnabled {
+                    if viewModel.soundEnabled {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Volume")
                                 .font(.caption)

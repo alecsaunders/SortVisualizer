@@ -50,11 +50,11 @@ struct ContentView: View {
             
             ToolbarItem(placement: .status) {
                 Button {
-                    viewModel.soundGenerator.isEnabled.toggle()
+                    viewModel.soundEnabled.toggle()
                 } label: {
-                    Label("Sound", systemImage: viewModel.soundGenerator.isEnabled ? "speaker.wave.2" : "speaker.slash")
+                    Label("Sound", systemImage: viewModel.soundEnabled ? "speaker.wave.2" : "speaker.slash")
                 }
-                .help(viewModel.soundGenerator.isEnabled ? "Sound enabled (click to disable)" : "Sound disabled (click to enable)")
+                .help(viewModel.soundEnabled ? "Sound enabled (click to disable)" : "Sound disabled (click to enable)")
             }
             
             ToolbarItemGroup(placement: .automatic) {
