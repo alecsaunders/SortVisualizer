@@ -133,6 +133,14 @@ struct InspectorView: View {
                             )
                             
                             ColorPickerRow(
+                                title: "Pointer",
+                                color: Binding(
+                                    get: { viewModel.customColors.pointer.color },
+                                    set: { viewModel.customColors.pointer = CodableColor($0) }
+                                )
+                            )
+                            
+                            ColorPickerRow(
                                 title: "Sorted",
                                 color: Binding(
                                     get: { viewModel.customColors.sorted.color },
@@ -155,6 +163,7 @@ struct InspectorView: View {
                             PreviewBar(color: viewModel.currentColors.unsorted.color, label: "Unsorted")
                             PreviewBar(color: viewModel.currentColors.comparing.color, label: "Comparing")
                             PreviewBar(color: viewModel.currentColors.pivot.color, label: "Pivot")
+                            PreviewBar(color: viewModel.currentColors.pointer.color, label: "Pointer")
                             PreviewBar(color: viewModel.currentColors.sorted.color, label: "Sorted")
                         }
                         .frame(height: 80)

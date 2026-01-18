@@ -31,7 +31,8 @@ enum SortAlgorithm: String, CaseIterable {
 enum BarState {
     case unsorted
     case comparing
-    case pivot      // For Quick Sort pivot element
+    case pivot      // For Quick Sort pivot element (green)
+    case pointer    // For algorithm pointers/indices (light blue/cyan)
     case sorted
 }
 

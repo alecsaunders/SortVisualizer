@@ -30,19 +30,22 @@ struct ColorSchemeColors: Equatable, Codable {
     var unsorted: CodableColor
     var comparing: CodableColor
     var pivot: CodableColor
+    var pointer: CodableColor
     var sorted: CodableColor
     
     static let classic = ColorSchemeColors(
         unsorted: CodableColor(.white),
         comparing: CodableColor(.red),
-        pivot: CodableColor(Color(red: 1.0, green: 0.5, blue: 0.0)), // Orange
+        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green
+        pointer: CodableColor(Color(red: 0.0, green: 0.7, blue: 0.9)), // Cyan/Light Blue
         sorted: CodableColor(.white)
     )
     
     static let educational = ColorSchemeColors(
         unsorted: CodableColor(.blue),
         comparing: CodableColor(.red),
-        pivot: CodableColor(Color(red: 1.0, green: 0.65, blue: 0.0)), // Orange
+        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green
+        pointer: CodableColor(Color(red: 0.0, green: 0.7, blue: 0.9)), // Cyan/Light Blue
         sorted: CodableColor(.green)
     )
     
@@ -54,6 +57,8 @@ struct ColorSchemeColors: Equatable, Codable {
             return comparing.color
         case .pivot:
             return pivot.color
+        case .pointer:
+            return pointer.color
         case .sorted:
             return sorted.color
         }

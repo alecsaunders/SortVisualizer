@@ -513,13 +513,19 @@ class SortingViewModel: ObservableObject {
         guard !Task.isCancelled else { return low }
         
         let pivot = bars[high]
-        bars[high].state = .pivot  // Mark pivot with distinct color
+        bars[high].state = .pivot  // Mark pivot with green
         var i = low - 1
         
         for j in low..<high {
             guard !Task.isCancelled else { break }
             
             bars[j].state = .comparing
+            
+            // Show partition boundary pointer if valid
+            if i >= low {
+                bars[i].state = .pointer
+            }
+            
             await delay(Int(speed / 2))
             
             // Play comparison sound
@@ -531,10 +537,20 @@ class SortingViewModel: ObservableObject {
                 bars[j].value > pivot.value
             
             if shouldSwapToLeft {
+                // Reset previous pointer
+                if i >= low && bars[i].state == .pointer {
+                    bars[i].state = .unsorted
+                }
+                
                 i += 1
                 if i != j {
                     await swapBars(at: i, and: j)
                 }
+            }
+            
+            // Clear pointer state
+            if i >= low && bars[i].state == .pointer {
+                bars[i].state = .unsorted
             }
             
             if bars[j].state == .comparing {
