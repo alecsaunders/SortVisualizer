@@ -13,5 +13,6 @@ struct SortAnimationApp: App {
         WindowGroup {
             ContentView()
         }
+        .windowStyle(.hiddenTitleBar)
     }
 }
