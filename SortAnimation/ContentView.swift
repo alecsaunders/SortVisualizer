@@ -13,24 +13,13 @@ struct ContentView: View {
     @State private var showInspector = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Control bar for sliders (always visible)
-            controlBar
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Color(NSColor.windowBackgroundColor).opacity(0.5))
-                .background(.ultraThinMaterial)
-            
-            Divider()
-            
-            // Bar chart visualization
-            CanvasBarChartView(
-                bars: viewModel.bars,
-                maxValue: viewModel.numberOfElements,
-                colors: viewModel.currentColors
-            )
-            .padding(20)
-        }
+        // Bar chart visualization
+        CanvasBarChartView(
+            bars: viewModel.bars,
+            maxValue: viewModel.numberOfElements,
+            colors: viewModel.currentColors
+        )
+        .padding(20)
         .frame(minWidth: 800, minHeight: 500)
         .inspector(isPresented: $showInspector) {
             InspectorView(viewModel: viewModel)
@@ -114,54 +103,6 @@ struct ContentView: View {
                 }
                 .help("Show Inspector")
             }
-        }
-    }
-    
-    private var controlBar: some View {
-        HStack(spacing: 24) {
-            // Elements control
-            HStack(spacing: 8) {
-                Text("Elements:")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 70, alignment: .trailing)
-                Slider(
-                    value: Binding(
-                        get: { Double(viewModel.numberOfElements) },
-                        set: { viewModel.numberOfElements = Int($0) }
-                    ),
-                    in: 10...200,
-                    step: 10
-                )
-                .frame(width: 200)
-                .disabled(viewModel.isSorting)
-                .onChange(of: viewModel.numberOfElements) { oldValue, newValue in
-                    if !viewModel.isSorting {
-                        viewModel.reset()
-                    }
-                }
-                Text("\(viewModel.numberOfElements)")
-                    .monospacedDigit()
-                    .frame(width: 40, alignment: .leading)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Divider()
-                .frame(height: 20)
-            
-            // Speed control
-            HStack(spacing: 8) {
-                Text("Speed:")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 50, alignment: .trailing)
-                Slider(value: $viewModel.speed, in: 0...1000, step: 10)
-                    .frame(width: 200)
-                Text("\(Int(viewModel.speed)) ms")
-                    .monospacedDigit()
-                    .frame(width: 60, alignment: .leading)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
         }
     }
 }

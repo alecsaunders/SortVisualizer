@@ -13,6 +13,55 @@ struct InspectorView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // Configuration Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Configuration")
+                        .font(.headline)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Elements control
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Elements")
+                                    .font(.subheadline)
+                                Spacer()
+                                Text("\(viewModel.numberOfElements)")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(
+                                value: Binding(
+                                    get: { Double(viewModel.numberOfElements) },
+                                    set: { viewModel.numberOfElements = Int($0) }
+                                ),
+                                in: 10...200,
+                                step: 10
+                            )
+                            .disabled(viewModel.isSorting)
+                            .onChange(of: viewModel.numberOfElements) { oldValue, newValue in
+                                if !viewModel.isSorting {
+                                    viewModel.reset()
+                                }
+                            }
+                        }
+                        
+                        // Speed control
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Speed")
+                                    .font(.subheadline)
+                                Spacer()
+                                Text("\(Int(viewModel.speed)) ms")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: $viewModel.speed, in: 0...1000, step: 10)
+                        }
+                    }
+                }
+                
+                Divider()
+                
                 // Color Scheme Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Color Scheme")
