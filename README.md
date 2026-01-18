@@ -12,7 +12,10 @@ A high-performance macOS app built with SwiftUI that visualizes sorting algorith
 - ⚡ **High Performance** - Canvas-based rendering handles 200+ bars at 60fps
 - 🎬 **Smooth Animations** - Horizontal bar crossing animations
 - 🎛️ **Real-time Controls** - Adjust speed while sorting is running
-- 🎨 **Color-coded States** - Blue (unsorted), Red (comparing), Green (sorted)
+- 🎨 **Customizable Colors** - Choose from Classic, Educational, or Custom color schemes
+- 🔊 **Sound Effects** - Audibilization following Sound of Sorting methodology
+- 👁️ **Step-by-Step Mode** - Pause, play, and step through algorithms
+- 🎨 **Inspector Sidebar** - All controls in one convenient panel
 - 📊 **Scalable** - From 10 to 200 elements
 
 ## Supported Algorithms
@@ -33,13 +36,34 @@ A high-performance macOS app built with SwiftUI that visualizes sorting algorith
 
 ## Controls
 
-| Control | Range | Description |
-|---------|-------|-------------|
-| **Algorithm** | 10 options | Select which sorting algorithm to visualize |
-| **Speed** | 1-1000 ms | Time delay between operations (adjustable during sort) |
-| **Elements** | 10-200 | Number of bars to sort (disabled during sort) |
-| **Sort Button** | - | Start the sorting animation |
-| **Reset Button** | - | Randomize the bars |
+### Toolbar
+| Control | Description |
+|---------|-------------|
+| **Info Button** | Show algorithm information (Big-O notation and description) |
+| **Algorithm Picker** | Select from 10 sorting algorithms |
+| **Sound Toggle** | Enable/disable sound effects |
+| **Step Button** | Execute next sorting step (→) |
+| **Play/Pause** | Start sorting or pause/resume (Space) |
+| **Reset Button** | Randomize the bars (⌘R) |
+| **Inspector Toggle** | Show/hide inspector sidebar |
+
+### Inspector Sidebar
+All configuration controls are accessed via the Inspector sidebar (toggle with toolbar button):
+
+#### Configuration
+- **Elements** (10-200, step 10) - Number of bars to sort
+- **Speed** (0-1000 ms, step 10) - Delay between operations
+
+#### Color Scheme
+- **Classic** - White/Red/White (Sound of Sorting style)
+- **Educational** - Blue/Red/Green (distinct sorted state)
+- **Custom** - Choose your own colors for each state
+- **Live Preview** - See color changes in real-time
+
+#### Sound
+- **Enable/Disable** - Toggle sound effects on/off
+- **Volume** - Adjust sound volume (0-100%)
+- **Sustain** - Control envelope duration
 
 ## Technical Details
 
@@ -65,9 +89,13 @@ A high-performance macOS app built with SwiftUI that visualizes sorting algorith
 ```
 SortAnimation/
 ├── Models.swift              # Data models (Bar, BarState, SortAlgorithm)
+├── ColorScheme.swift         # Color scheme definitions and persistence
 ├── SortingViewModel.swift    # Business logic and sorting algorithms
+├── SoundGenerator.swift      # Audio synthesis and sound effects
 ├── CanvasBarChartView.swift  # High-performance Canvas rendering
-├── ContentView.swift         # Main UI and controls
+├── InspectorView.swift       # Inspector sidebar UI
+├── AlgorithmInfoView.swift   # Algorithm information popover
+├── ContentView.swift         # Main UI and toolbar
 └── SortAnimationApp.swift    # App entry point
 ```
 
@@ -90,7 +118,7 @@ SortAnimation/
 ## Building and Running
 
 ### Requirements
-- macOS 12.0 or later
+- macOS 13.0 or later (for Inspector API support)
 - Xcode 14.0 or later
 - Swift 5.0 or later
 
@@ -111,10 +139,14 @@ open SortAnimation.xcodeproj
 
 ## Usage Tips
 
-- Start with **100 elements** at **2ms speed** for a great overview
+- **Open the Inspector** - Click the sidebar button in the toolbar to access all controls
+- Start with **100 elements** at **10ms speed** for a great overview
 - Try **Quick Sort** or **Merge Sort** for fastest completion
 - Use **Bubble Sort** or **Cocktail Shaker** to see classic swapping
 - Watch **Radix Sort** organize by digits (ones, tens, hundreds)
+- **Step through algorithms** - Use the Step button or → key to advance one operation at a time
+- **Enable sound** - Toggle sound effects to hear the audibilization of comparisons
+- **Customize colors** - Switch to Classic mode for white/red, or create your own scheme
 - Increase to **200 elements** to stress-test performance
 - Adjust speed in **real-time** to slow down interesting moments
 
@@ -135,11 +167,20 @@ open SortAnimation.xcodeproj
 
 *Shell Sort complexity depends on gap sequence
 
-## Color Legend
+## Color Schemes
 
+### Classic (Sound of Sorting)
+- ⚪ **White** - Unsorted elements
+- 🔴 **Red** - Elements being compared or moved
+- ⚪ **White** - Sorted elements (returns to unsorted color)
+
+### Educational (Default)
 - 🔵 **Blue** - Unsorted elements
 - 🔴 **Red** - Elements being compared or moved
 - 🟢 **Green** - Sorted elements in final position
+
+### Custom
+- Choose any color for each state using the color pickers in the Inspector
 
 ## Future Enhancements
 
@@ -147,7 +188,6 @@ open SortAnimation.xcodeproj
 - [ ] Algorithm complexity visualization
 - [ ] Export animation as video
 - [ ] Comparison mode (run multiple algorithms side-by-side)
-- [ ] Custom color themes
 
 ## License
 
@@ -157,4 +197,4 @@ MIT License - see LICENSE file for details
 
 Created by Alec Saunders
 
-Built with SwiftUI and the Canvas API for maximum performance.
+Built with SwiftUI and the Canvas API for maximum performance. Sound effects inspired by [The Sound of Sorting](https://panthema.net/2013/sound-of-sorting/) by Timo Bingmann.
