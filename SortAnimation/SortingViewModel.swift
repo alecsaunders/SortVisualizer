@@ -542,6 +542,9 @@ class SortingViewModel: ObservableObject {
             }
         }
         
+        // Reset pivot state before swap
+        bars[high].state = .unsorted
+        
         await swapBars(at: i + 1, and: high)
         bars[i + 1].state = .sorted
         
