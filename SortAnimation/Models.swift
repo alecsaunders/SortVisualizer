@@ -8,6 +8,13 @@
 import Foundation
 import SwiftUI
 
+enum SortDirection: String, CaseIterable, Identifiable {
+    case ascending = "Ascending"
+    case descending = "Descending"
+    
+    var id: String { rawValue }
+}
+
 enum SortAlgorithm: String, CaseIterable {
     case bubble = "Bubble Sort"
     case selection = "Selection Sort"

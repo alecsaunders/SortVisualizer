@@ -13,6 +13,7 @@ import Combine
 class SortingViewModel: ObservableObject {
     @Published var bars: [Bar] = []
     @Published var selectedAlgorithm: SortAlgorithm = .bubble
+    @Published var sortDirection: SortDirection = .ascending
     @Published var speed: Double = 10 // milliseconds
     @Published var numberOfElements: Int = 100
     @Published var isSorting: Bool = false
@@ -174,7 +175,7 @@ class SortingViewModel: ObservableObject {
                 // Play comparison sound
                 playComparisonSound(value1: bars[j].value, value2: bars[j + 1].value)
                 
-                if bars[j].value > bars[j + 1].value {
+                if shouldSwap(bars[j].value, bars[j + 1].value) {
                     // Perform swap with animation
                     await swapBars(at: j, and: j + 1)
                     swapped = true
@@ -206,8 +207,8 @@ class SortingViewModel: ObservableObject {
         for i in 0..<n {
             guard !Task.isCancelled else { break }
             
-            var minIndex = i
-            bars[minIndex].state = .comparing
+            var targetIndex = i
+            bars[targetIndex].state = .comparing
             
             for j in (i + 1)..<n {
                 guard !Task.isCancelled else { break }
@@ -218,25 +219,30 @@ class SortingViewModel: ObservableObject {
                 await delay(Int(speed / 2))
                 
                 // Play comparison sound
-                playComparisonSound(value1: bars[j].value, value2: bars[minIndex].value)
+                playComparisonSound(value1: bars[j].value, value2: bars[targetIndex].value)
                 
-                if bars[j].value < bars[minIndex].value {
-                    // Reset previous minimum
-                    if bars[minIndex].state == .comparing {
-                        bars[minIndex].state = .unsorted
+                // For ascending: find minimum; for descending: find maximum
+                let shouldUpdate = sortDirection == .ascending ? 
+                    bars[j].value < bars[targetIndex].value : 
+                    bars[j].value > bars[targetIndex].value
+                
+                if shouldUpdate {
+                    // Reset previous target
+                    if bars[targetIndex].state == .comparing {
+                        bars[targetIndex].state = .unsorted
                     }
-                    minIndex = j
-                    bars[minIndex].state = .comparing
+                    targetIndex = j
+                    bars[targetIndex].state = .comparing
                 } else {
-                    // Reset if not the minimum
-                    if bars[j].state == .comparing && j != minIndex {
+                    // Reset if not the target
+                    if bars[j].state == .comparing && j != targetIndex {
                         bars[j].state = .unsorted
                     }
                 }
             }
             
-            if minIndex != i {
-                await swapBars(at: i, and: minIndex)
+            if targetIndex != i {
+                await swapBars(at: i, and: targetIndex)
             } else {
                 // No swap needed, just mark as sorted
                 bars[i].state = .sorted
@@ -295,6 +301,16 @@ class SortingViewModel: ObservableObject {
         }
     }
     
+    // Helper function to compare values based on sort direction
+    private func shouldSwap(_ value1: Int, _ value2: Int) -> Bool {
+        switch sortDirection {
+        case .ascending:
+            return value1 > value2
+        case .descending:
+            return value1 < value2
+        }
+    }
+    
     private func playComparisonSound(value1: Int, value2: Int) {
         soundGenerator.playComparison(
             value1: value1,
@@ -315,7 +331,7 @@ class SortingViewModel: ObservableObject {
             var j = i - 1
             
             // Find the correct position for the key
-            while j >= 0 && bars[j].value > key.value {
+            while j >= 0 && shouldSwap(bars[j].value, key.value) {
                 guard !Task.isCancelled else { break }
                 
                 bars[j].state = .comparing
@@ -377,7 +393,12 @@ class SortingViewModel: ObservableObject {
             // Play comparison sound
             playComparisonSound(value1: leftArray[i].value, value2: rightArray[j].value)
             
-            if leftArray[i].value <= rightArray[j].value {
+            // For ascending: pick smaller; for descending: pick larger
+            let shouldPickLeft = sortDirection == .ascending ?
+                leftArray[i].value <= rightArray[j].value :
+                leftArray[i].value >= rightArray[j].value
+            
+            if shouldPickLeft {
                 bars[k] = leftArray[i]
                 i += 1
             } else {
@@ -424,6 +445,18 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             await countingSort(exp: exp)
             exp *= 10
+        }
+        
+        // If descending, reverse the final result
+        if sortDirection == .descending {
+            bars = bars.reversed()
+            // Animate the reversed result
+            for i in 0..<bars.count {
+                guard !Task.isCancelled else { break }
+                bars[i].state = .comparing
+                await delay(Int(speed))
+                bars[i].state = .unsorted
+            }
         }
     }
     
@@ -505,7 +538,12 @@ class SortingViewModel: ObservableObject {
             // Play comparison sound
             playComparisonSound(value1: bars[j].value, value2: pivot.value)
             
-            if bars[j].value < pivot.value {
+            // For ascending: elements < pivot go left; for descending: elements > pivot go left
+            let shouldSwapToLeft = sortDirection == .ascending ?
+                bars[j].value < pivot.value :
+                bars[j].value > pivot.value
+            
+            if shouldSwapToLeft {
                 i += 1
                 if i != j {
                     await swapBars(at: i, and: j)
@@ -555,7 +593,7 @@ class SortingViewModel: ObservableObject {
     private func heapify(n: Int, root: Int) async {
         guard !Task.isCancelled else { return }
         
-        var largest = root
+        var target = root
         let left = 2 * root + 1
         let right = 2 * root + 2
         
@@ -564,10 +602,15 @@ class SortingViewModel: ObservableObject {
             await delay(Int(speed / 2))
             
             // Play comparison sound
-            playComparisonSound(value1: bars[left].value, value2: bars[largest].value)
+            playComparisonSound(value1: bars[left].value, value2: bars[target].value)
             
-            if bars[left].value > bars[largest].value {
-                largest = left
+            // For ascending: build max heap; for descending: build min heap
+            let shouldUpdate = sortDirection == .ascending ?
+                bars[left].value > bars[target].value :
+                bars[left].value < bars[target].value
+            
+            if shouldUpdate {
+                target = left
             }
             bars[left].state = .unsorted
         }
@@ -577,22 +620,27 @@ class SortingViewModel: ObservableObject {
             await delay(Int(speed / 2))
             
             // Play comparison sound
-            playComparisonSound(value1: bars[right].value, value2: bars[largest].value)
+            playComparisonSound(value1: bars[right].value, value2: bars[target].value)
             
-            if bars[right].value > bars[largest].value {
-                largest = right
+            // For ascending: build max heap; for descending: build min heap
+            let shouldUpdate = sortDirection == .ascending ?
+                bars[right].value > bars[target].value :
+                bars[right].value < bars[target].value
+            
+            if shouldUpdate {
+                target = right
             }
             bars[right].state = .unsorted
         }
         
-        if largest != root {
+        if target != root {
             bars[root].state = .comparing
-            bars[largest].state = .comparing
-            await swapBars(at: root, and: largest)
+            bars[target].state = .comparing
+            await swapBars(at: root, and: target)
             bars[root].state = .unsorted
-            bars[largest].state = .unsorted
+            bars[target].state = .unsorted
             
-            await heapify(n: n, root: largest)
+            await heapify(n: n, root: target)
         }
     }
     
@@ -612,7 +660,7 @@ class SortingViewModel: ObservableObject {
                 bars[i].state = .comparing
                 var j = i
                 
-                while j >= gap && bars[j - gap].value > temp.value {
+                while j >= gap && shouldSwap(bars[j - gap].value, temp.value) {
                     guard !Task.isCancelled else { break }
                     
                     bars[j - gap].state = .comparing
@@ -676,7 +724,7 @@ class SortingViewModel: ObservableObject {
         }
         
         // Now replace entire array and animate the result
-        bars = output
+        bars = sortDirection == .ascending ? output : output.reversed()
         
         // Animate through showing each bar in its sorted position
         for i in 0..<n {
@@ -710,7 +758,7 @@ class SortingViewModel: ObservableObject {
                 // Play comparison sound
                 playComparisonSound(value1: bars[i].value, value2: bars[i + 1].value)
                 
-                if bars[i].value > bars[i + 1].value {
+                if shouldSwap(bars[i].value, bars[i + 1].value) {
                     await swapBars(at: i, and: i + 1)
                     swapped = true
                 }
@@ -737,7 +785,7 @@ class SortingViewModel: ObservableObject {
                 // Play comparison sound
                 playComparisonSound(value1: bars[i].value, value2: bars[i + 1].value)
                 
-                if bars[i].value > bars[i + 1].value {
+                if shouldSwap(bars[i].value, bars[i + 1].value) {
                     await swapBars(at: i, and: i + 1)
                     swapped = true
                 }

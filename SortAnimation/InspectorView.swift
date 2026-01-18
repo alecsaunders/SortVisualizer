@@ -19,6 +19,19 @@ struct InspectorView: View {
                         .font(.headline)
                     
                     VStack(alignment: .leading, spacing: 12) {
+                        // Sort Direction control
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Sort Direction")
+                                .font(.subheadline)
+                            Picker("", selection: $viewModel.sortDirection) {
+                                ForEach(SortDirection.allCases) { direction in
+                                    Text(direction.rawValue).tag(direction)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(viewModel.isSorting)
+                        }
+                        
                         // Elements control
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
