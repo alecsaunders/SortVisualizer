@@ -13,11 +13,13 @@ import Combine
 class SortingViewModel: ObservableObject {
     @Published var bars: [Bar] = []
     @Published var selectedAlgorithm: SortAlgorithm = .bubble
-    @Published var speed: Double = 2 // milliseconds
+    @Published var speed: Double = 10 // milliseconds
     @Published var numberOfElements: Int = 100
     @Published var isSorting: Bool = false
+    @Published var isPaused: Bool = false
     
     private var sortTask: Task<Void, Never>?
+    private var stepContinuation: CheckedContinuation<Void, Never>?
     
     init() {
         reset()
@@ -25,12 +27,36 @@ class SortingViewModel: ObservableObject {
     
     func reset() {
         sortTask?.cancel()
+        stepContinuation?.resume()
+        stepContinuation = nil
         isSorting = false
+        isPaused = false
         
         let values = Array(1...numberOfElements).shuffled()
         bars.removeAll(keepingCapacity: true) // Keep capacity for reuse
         bars.reserveCapacity(numberOfElements) // Ensure capacity
         bars = values.map { Bar(value: $0, state: .unsorted) }
+    }
+    
+    func togglePause() {
+        isPaused.toggle()
+        if !isPaused {
+            // Resume from pause
+            stepContinuation?.resume()
+            stepContinuation = nil
+        }
+    }
+    
+    func nextStep() {
+        if !isSorting {
+            // Start sorting in paused mode
+            isPaused = true
+            startSort()
+        } else {
+            // Resume from current step
+            stepContinuation?.resume()
+            stepContinuation = nil
+        }
     }
     
     func startSort() {
@@ -127,7 +153,7 @@ class SortingViewModel: ObservableObject {
                 bars[j].state = .comparing
                 
                 // Small delay to visualize comparison
-                try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+                await delay(Int(speed / 2))
                 
                 if bars[j].value < bars[minIndex].value {
                     // Reset previous minimum
@@ -180,7 +206,7 @@ class SortingViewModel: ObservableObject {
         }
         
         // Wait for animation plus speed delay
-        try? await Task.sleep(for: .milliseconds(Int(speed)))
+        await delay(Int(speed))
         
         // Actually swap the bars
         bars.swapAt(index1, index2)
@@ -188,6 +214,20 @@ class SortingViewModel: ObservableObject {
         // Reset offsets
         bars[index1].offset = 0
         bars[index2].offset = 0
+    }
+    
+    private func waitForStep() async {
+        await withCheckedContinuation { continuation in
+            stepContinuation = continuation
+        }
+    }
+    
+    private func delay(_ milliseconds: Int) async {
+        if isPaused {
+            await waitForStep()
+        } else {
+            try? await Task.sleep(for: .milliseconds(milliseconds))
+        }
     }
     
     private func insertionSort() async {
@@ -276,7 +316,7 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             bars[k] = leftArray[i]
             bars[k].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            await delay(Int(speed))
             bars[k].state = .unsorted
             i += 1
             k += 1
@@ -287,7 +327,7 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             bars[k] = rightArray[j]
             bars[k].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            await delay(Int(speed))
             bars[k].state = .unsorted
             j += 1
             k += 1
@@ -320,7 +360,7 @@ class SortingViewModel: ObservableObject {
         for i in 0..<n {
             bars[i].state = .comparing
         }
-        try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+        await delay(Int(speed / 2))
         
         // Store count of occurrences
         for i in 0..<n {
@@ -349,7 +389,7 @@ class SortingViewModel: ObservableObject {
         for i in 0..<n {
             guard !Task.isCancelled else { break }
             bars[i].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            await delay(Int(speed))
             bars[i].state = .unsorted
         }
     }
@@ -380,7 +420,7 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             
             bars[j].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            await delay(Int(speed / 2))
             
             if bars[j].value < pivot.value {
                 i += 1
@@ -438,7 +478,7 @@ class SortingViewModel: ObservableObject {
         
         if left < n {
             bars[left].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            await delay(Int(speed / 2))
             
             if bars[left].value > bars[largest].value {
                 largest = left
@@ -448,7 +488,7 @@ class SortingViewModel: ObservableObject {
         
         if right < n {
             bars[right].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            await delay(Int(speed / 2))
             
             if bars[right].value > bars[largest].value {
                 largest = right
@@ -519,7 +559,7 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             bars[i].state = .comparing
             count[bars[i].value - minValue] += 1
-            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            await delay(Int(speed / 2))
         }
         
         // Build the sorted output array
@@ -551,7 +591,7 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             
             bars[i].state = .comparing
-            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            await delay(Int(speed))
             bars[i].state = .unsorted
         }
     }

@@ -31,12 +31,13 @@ struct ContentView: View {
         }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
+            ToolbarItemGroup(placement: .principal) {
                 Button {
                     showingAlgorithmInfo.toggle()
                 } label: {
-                    Image(systemName: "info.circle")
+                    Label("Info", systemImage: "info.circle")
                 }
+                .labelStyle(.iconOnly)
                 .help("Algorithm information")
                 .popover(isPresented: $showingAlgorithmInfo, arrowEdge: .bottom) {
                     AlgorithmInfoView(algorithm: viewModel.selectedAlgorithm)
@@ -51,18 +52,45 @@ struct ContentView: View {
                 .frame(width: 180)
                 .disabled(viewModel.isSorting)
                 .help("Choose sorting algorithm")
-                
-                Button("Sort") {
-                    viewModel.startSort()
+            }
+            
+            ToolbarItemGroup(placement: .automatic) {
+                Group {
+                    Button {
+                        viewModel.nextStep()
+                    } label: {
+                        Label("Step", systemImage: "arrow.right")
+                    }
+                    .help("Next step (→)")
+                    .keyboardShortcut(.rightArrow, modifiers: [])
+                    .disabled(viewModel.isSorting && !viewModel.isPaused)
+                    
+                    if viewModel.isSorting {
+                        Button {
+                            viewModel.togglePause()
+                        } label: {
+                            Label(viewModel.isPaused ? "Resume" : "Pause", 
+                                  systemImage: viewModel.isPaused ? "play.fill" : "pause.fill")
+                        }
+                        .help(viewModel.isPaused ? "Resume sorting (Space)" : "Pause sorting (Space)")
+                        .keyboardShortcut(.space, modifiers: [])
+                    } else {
+                        Button {
+                            viewModel.startSort()
+                        } label: {
+                            Label("Sort", systemImage: "play.fill")
+                        }
+                        .keyboardShortcut(.return, modifiers: [])
+                        .help("Start sorting (⏎)")
+                    }
                 }
-                .disabled(viewModel.isSorting)
-                .keyboardShortcut(.return, modifiers: [])
-                .help("Start sorting animation (⏎)")
                 
-                Button("Reset") {
+                Button {
                     viewModel.reset()
+                } label: {
+                    Label("Reset", systemImage: "arrow.counterclockwise")
                 }
-                .help("Randomize bars (⌘R)")
+                .help("Reset (⌘R)")
                 .keyboardShortcut("r", modifiers: .command)
             }
         }
@@ -104,7 +132,7 @@ struct ContentView: View {
                 Text("Speed:")
                     .foregroundStyle(.secondary)
                     .frame(width: 50, alignment: .trailing)
-                Slider(value: $viewModel.speed, in: 1...1000, step: 1)
+                Slider(value: $viewModel.speed, in: 0...1000, step: 10)
                     .frame(width: 200)
                 Text("\(Int(viewModel.speed)) ms")
                     .monospacedDigit()
