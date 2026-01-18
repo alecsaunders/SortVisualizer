@@ -36,16 +36,16 @@ struct ColorSchemeColors: Equatable, Codable {
     static let classic = ColorSchemeColors(
         unsorted: CodableColor(.white),
         comparing: CodableColor(.red),
-        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green
-        pointer: CodableColor(Color(red: 0.0, green: 0.7, blue: 0.9)), // Cyan/Light Blue
+        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green (Sound of Sorting standard)
+        pointer: CodableColor(Color(red: 0.0, green: 0.7, blue: 0.9)), // Cyan/Light Blue (Sound of Sorting standard)
         sorted: CodableColor(.white)
     )
     
     static let educational = ColorSchemeColors(
         unsorted: CodableColor(.blue),
         comparing: CodableColor(.red),
-        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green
-        pointer: CodableColor(Color(red: 0.0, green: 0.7, blue: 0.9)), // Cyan/Light Blue
+        pivot: CodableColor(Color(red: 1.0, green: 0.6, blue: 0.0)), // Orange (vibrant, educational)
+        pointer: CodableColor(Color(red: 0.7, green: 0.3, blue: 0.9)), // Purple (distinct, educational)
         sorted: CodableColor(.green)
     )
     
