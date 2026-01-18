@@ -13,6 +13,9 @@ import Combine
 class SoundGenerator: ObservableObject {
     @Published var isEnabled: Bool = false
     
+    var volume: Float = 0.5
+    var sustainTime: Double = 0.3
+    
     private let audioEngine = AVAudioEngine()
     private let mixer = AVAudioMixerNode()
     private let sampleRate: Double = 44100
@@ -58,12 +61,13 @@ class SoundGenerator: ObservableObject {
     private func playTone(frequency: Double, duration: Double) {
         activeNodeCount += 1
         
-        // Create oscillator
+        // Create oscillator with current settings
         let oscillator = Oscillator(
             frequency: frequency,
             duration: duration,
+            sustainTime: sustainTime,
             sampleRate: sampleRate,
-            volumeScale: volumeScaleForActiveOscillators()
+            volumeScale: volumeScaleForActiveOscillators() * volume
         )
         
         // Create audio source node with captured oscillator (thread-safe)
@@ -128,17 +132,18 @@ class Oscillator {
         currentSample >= totalSamples
     }
     
-    init(frequency: Double, duration: Double, sampleRate: Double, volumeScale: Float) {
+    init(frequency: Double, duration: Double, sustainTime: Double, sampleRate: Double, volumeScale: Float) {
         self.frequency = frequency
         self.duration = duration
         self.sampleRate = sampleRate
         self.volumeScale = volumeScale
         self.totalSamples = Int(duration * sampleRate)
         
-        // ADSR envelope timing
-        self.attackSamples = Int(0.01 * sampleRate)  // 10ms attack
-        self.decaySamples = Int(0.02 * sampleRate)   // 20ms decay
-        self.releaseSamples = Int(0.05 * sampleRate) // 50ms release
+        // ADSR envelope timing - sustain time affects the overall envelope
+        let adjustedDuration = duration * (0.5 + sustainTime * 0.5) // Scale envelope with sustain
+        self.attackSamples = Int(0.01 * sampleRate * adjustedDuration)  // 10ms attack (scaled)
+        self.decaySamples = Int(0.02 * sampleRate * adjustedDuration)   // 20ms decay (scaled)
+        self.releaseSamples = Int(0.05 * sampleRate * adjustedDuration) // 50ms release (scaled)
     }
     
     func nextSample() -> Float {

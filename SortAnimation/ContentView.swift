@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = SortingViewModel()
     @State private var showingAlgorithmInfo = false
+    @State private var showInspector = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -25,11 +26,15 @@ struct ContentView: View {
             // Bar chart visualization
             CanvasBarChartView(
                 bars: viewModel.bars,
-                maxValue: viewModel.numberOfElements
+                maxValue: viewModel.numberOfElements,
+                colors: viewModel.currentColors
             )
             .padding(20)
         }
         .frame(minWidth: 800, minHeight: 500)
+        .inspector(isPresented: $showInspector) {
+            InspectorView(viewModel: viewModel)
+        }
         .toolbar {
             ToolbarItemGroup(placement: .principal) {
                 Button {
@@ -99,6 +104,15 @@ struct ContentView: View {
                 }
                 .help("Reset (⌘R)")
                 .keyboardShortcut("r", modifiers: .command)
+            }
+            
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    showInspector.toggle()
+                } label: {
+                    Label("Inspector", systemImage: "sidebar.right")
+                }
+                .help("Show Inspector")
             }
         }
     }

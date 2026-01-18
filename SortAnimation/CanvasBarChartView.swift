@@ -10,6 +10,7 @@ import SwiftUI
 struct CanvasBarChartView: View {
     let bars: [Bar]
     let maxValue: Int
+    let colors: ColorSchemeColors
     
     var body: some View {
         Canvas { context, size in
@@ -41,7 +42,7 @@ struct CanvasBarChartView: View {
                 )
                 
                 // Get color based on state
-                let color: Color = bar.state.color
+                let color: Color = colors.color(for: bar.state)
                 
                 // Draw the bar
                 context.fill(
@@ -61,7 +62,8 @@ struct CanvasBarChartView: View {
             Bar(value: 8, state: .sorted),
             Bar(value: 15, state: .unsorted)
         ],
-        maxValue: 20
+        maxValue: 20,
+        colors: .educational
     )
     .frame(height: 300)
     .padding()

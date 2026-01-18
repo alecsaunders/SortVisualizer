@@ -18,12 +18,50 @@ class SortingViewModel: ObservableObject {
     @Published var isSorting: Bool = false
     @Published var isPaused: Bool = false
     
+    // Color scheme
+    @Published var colorSchemeType: ColorSchemeType = .educational {
+        didSet {
+            saveColorScheme()
+        }
+    }
+    @Published var customColors: ColorSchemeColors = .educational {
+        didSet {
+            saveColorScheme()
+        }
+    }
+    
+    var currentColors: ColorSchemeColors {
+        switch colorSchemeType {
+        case .classic:
+            return .classic
+        case .educational:
+            return .educational
+        case .custom:
+            return customColors
+        }
+    }
+    
+    // Sound settings
+    @Published var soundVolume: Double = 0.5 {
+        didSet {
+            soundGenerator.volume = Float(soundVolume)
+        }
+    }
+    @Published var soundSustain: Double = 0.3 {
+        didSet {
+            soundGenerator.sustainTime = soundSustain
+        }
+    }
+    
     let soundGenerator = SoundGenerator()
     
     private var sortTask: Task<Void, Never>?
     private var stepContinuation: CheckedContinuation<Void, Never>?
     
     init() {
+        loadColorScheme()
+        soundGenerator.volume = Float(soundVolume)
+        soundGenerator.sustainTime = soundSustain
         reset()
     }
     
@@ -696,6 +734,28 @@ class SortingViewModel: ObservableObject {
         // Mark remaining unsorted as sorted
         for i in start...end {
             bars[i].state = .sorted
+        }
+    }
+    
+    // MARK: - Persistence
+    
+    private func loadColorScheme() {
+        if let typeString = UserDefaults.standard.string(forKey: "colorSchemeType"),
+           let type = ColorSchemeType(rawValue: typeString) {
+            colorSchemeType = type
+        }
+        
+        if let customData = UserDefaults.standard.data(forKey: "customColors"),
+           let colors = try? JSONDecoder().decode(ColorSchemeColors.self, from: customData) {
+            customColors = colors
+        }
+    }
+    
+    private func saveColorScheme() {
+        UserDefaults.standard.set(colorSchemeType.rawValue, forKey: "colorSchemeType")
+        
+        if let customData = try? JSONEncoder().encode(customColors) {
+            UserDefaults.standard.set(customData, forKey: "customColors")
         }
     }
 }

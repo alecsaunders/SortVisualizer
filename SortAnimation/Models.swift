@@ -25,17 +25,6 @@ enum BarState {
     case unsorted
     case comparing
     case sorted
-    
-    var color: Color {
-        switch self {
-        case .unsorted:
-            return .blue
-        case .comparing:
-            return .red
-        case .sorted:
-            return .green
-        }
-    }
 }
 
 struct Bar: Identifiable, Equatable {
