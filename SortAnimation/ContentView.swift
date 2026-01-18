@@ -54,35 +54,42 @@ struct ContentView: View {
                 .help("Choose sorting algorithm")
             }
             
+            ToolbarItem(placement: .status) {
+                Button {
+                    viewModel.soundGenerator.isEnabled.toggle()
+                } label: {
+                    Label("Sound", systemImage: viewModel.soundGenerator.isEnabled ? "speaker.wave.2" : "speaker.slash")
+                }
+                .help(viewModel.soundGenerator.isEnabled ? "Sound enabled (click to disable)" : "Sound disabled (click to enable)")
+            }
+            
             ToolbarItemGroup(placement: .automatic) {
-                Group {
+                Button {
+                    viewModel.nextStep()
+                } label: {
+                    Label("Step", systemImage: "arrow.right")
+                }
+                .help("Next step (→)")
+                .keyboardShortcut(.rightArrow, modifiers: [])
+                .disabled(viewModel.isSorting && !viewModel.isPaused)
+                
+                if viewModel.isSorting {
                     Button {
-                        viewModel.nextStep()
+                        viewModel.togglePause()
                     } label: {
-                        Label("Step", systemImage: "arrow.right")
+                        Label(viewModel.isPaused ? "Resume" : "Pause", 
+                              systemImage: viewModel.isPaused ? "play.fill" : "pause.fill")
                     }
-                    .help("Next step (→)")
-                    .keyboardShortcut(.rightArrow, modifiers: [])
-                    .disabled(viewModel.isSorting && !viewModel.isPaused)
-                    
-                    if viewModel.isSorting {
-                        Button {
-                            viewModel.togglePause()
-                        } label: {
-                            Label(viewModel.isPaused ? "Resume" : "Pause", 
-                                  systemImage: viewModel.isPaused ? "play.fill" : "pause.fill")
-                        }
-                        .help(viewModel.isPaused ? "Resume sorting (Space)" : "Pause sorting (Space)")
-                        .keyboardShortcut(.space, modifiers: [])
-                    } else {
-                        Button {
-                            viewModel.startSort()
-                        } label: {
-                            Label("Sort", systemImage: "play.fill")
-                        }
-                        .keyboardShortcut(.return, modifiers: [])
-                        .help("Start sorting (⏎)")
+                    .help(viewModel.isPaused ? "Resume sorting (Space)" : "Pause sorting (Space)")
+                    .keyboardShortcut(.space, modifiers: [])
+                } else {
+                    Button {
+                        viewModel.startSort()
+                    } label: {
+                        Label("Sort", systemImage: "play.fill")
                     }
+                    .keyboardShortcut(.return, modifiers: [])
+                    .help("Start sorting (⏎)")
                 }
                 
                 Button {

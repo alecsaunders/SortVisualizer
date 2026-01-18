@@ -18,6 +18,8 @@ class SortingViewModel: ObservableObject {
     @Published var isSorting: Bool = false
     @Published var isPaused: Bool = false
     
+    let soundGenerator = SoundGenerator()
+    
     private var sortTask: Task<Void, Never>?
     private var stepContinuation: CheckedContinuation<Void, Never>?
     
@@ -112,6 +114,9 @@ class SortingViewModel: ObservableObject {
                 bars[j].state = .comparing
                 bars[j + 1].state = .comparing
                 
+                // Play comparison sound
+                playComparisonSound(value1: bars[j].value, value2: bars[j + 1].value)
+                
                 if bars[j].value > bars[j + 1].value {
                     // Perform swap with animation
                     await swapBars(at: j, and: j + 1)
@@ -154,6 +159,9 @@ class SortingViewModel: ObservableObject {
                 
                 // Small delay to visualize comparison
                 await delay(Int(speed / 2))
+                
+                // Play comparison sound
+                playComparisonSound(value1: bars[j].value, value2: bars[minIndex].value)
                 
                 if bars[j].value < bars[minIndex].value {
                     // Reset previous minimum
@@ -230,6 +238,15 @@ class SortingViewModel: ObservableObject {
         }
     }
     
+    private func playComparisonSound(value1: Int, value2: Int) {
+        soundGenerator.playComparison(
+            value1: value1,
+            value2: value2,
+            maxValue: numberOfElements,
+            duration: min(Double(speed) / 1000.0, 0.2)
+        )
+    }
+    
     private func insertionSort() async {
         let n = bars.count
         
@@ -246,6 +263,9 @@ class SortingViewModel: ObservableObject {
                 
                 bars[j].state = .comparing
                 bars[j + 1].state = .comparing
+                
+                // Play comparison sound
+                playComparisonSound(value1: bars[j].value, value2: key.value)
                 
                 // Shift element to the right
                 await swapBars(at: j, and: j + 1)
@@ -296,6 +316,9 @@ class SortingViewModel: ObservableObject {
         // Merge the arrays back
         while i < leftArray.count && j < rightArray.count {
             guard !Task.isCancelled else { break }
+            
+            // Play comparison sound
+            playComparisonSound(value1: leftArray[i].value, value2: rightArray[j].value)
             
             if leftArray[i].value <= rightArray[j].value {
                 bars[k] = leftArray[i]
@@ -422,6 +445,9 @@ class SortingViewModel: ObservableObject {
             bars[j].state = .comparing
             await delay(Int(speed / 2))
             
+            // Play comparison sound
+            playComparisonSound(value1: bars[j].value, value2: pivot.value)
+            
             if bars[j].value < pivot.value {
                 i += 1
                 if i != j {
@@ -480,6 +506,9 @@ class SortingViewModel: ObservableObject {
             bars[left].state = .comparing
             await delay(Int(speed / 2))
             
+            // Play comparison sound
+            playComparisonSound(value1: bars[left].value, value2: bars[largest].value)
+            
             if bars[left].value > bars[largest].value {
                 largest = left
             }
@@ -489,6 +518,9 @@ class SortingViewModel: ObservableObject {
         if right < n {
             bars[right].state = .comparing
             await delay(Int(speed / 2))
+            
+            // Play comparison sound
+            playComparisonSound(value1: bars[right].value, value2: bars[largest].value)
             
             if bars[right].value > bars[largest].value {
                 largest = right
@@ -528,6 +560,9 @@ class SortingViewModel: ObservableObject {
                     
                     bars[j - gap].state = .comparing
                     bars[j].state = .comparing
+                    
+                    // Play comparison sound
+                    playComparisonSound(value1: bars[j - gap].value, value2: temp.value)
                     
                     await swapBars(at: j, and: j - gap)
                     
@@ -615,6 +650,9 @@ class SortingViewModel: ObservableObject {
                 bars[i].state = .comparing
                 bars[i + 1].state = .comparing
                 
+                // Play comparison sound
+                playComparisonSound(value1: bars[i].value, value2: bars[i + 1].value)
+                
                 if bars[i].value > bars[i + 1].value {
                     await swapBars(at: i, and: i + 1)
                     swapped = true
@@ -638,6 +676,9 @@ class SortingViewModel: ObservableObject {
                 
                 bars[i].state = .comparing
                 bars[i + 1].state = .comparing
+                
+                // Play comparison sound
+                playComparisonSound(value1: bars[i].value, value2: bars[i + 1].value)
                 
                 if bars[i].value > bars[i + 1].value {
                     await swapBars(at: i, and: i + 1)

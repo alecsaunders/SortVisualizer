@@ -145,7 +145,6 @@ open SortAnimation.xcodeproj
 
 - [ ] Add more algorithms (Tim Sort, Bitonic Sort)
 - [ ] Algorithm complexity visualization
-- [ ] Sound effects
 - [ ] Export animation as video
 - [ ] Comparison mode (run multiple algorithms side-by-side)
 - [ ] Custom color themes
