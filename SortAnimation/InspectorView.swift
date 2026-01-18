@@ -125,6 +125,14 @@ struct InspectorView: View {
                             )
                             
                             ColorPickerRow(
+                                title: "Pivot",
+                                color: Binding(
+                                    get: { viewModel.customColors.pivot.color },
+                                    set: { viewModel.customColors.pivot = CodableColor($0) }
+                                )
+                            )
+                            
+                            ColorPickerRow(
                                 title: "Sorted",
                                 color: Binding(
                                     get: { viewModel.customColors.sorted.color },
@@ -146,6 +154,7 @@ struct InspectorView: View {
                         HStack(spacing: 4) {
                             PreviewBar(color: viewModel.currentColors.unsorted.color, label: "Unsorted")
                             PreviewBar(color: viewModel.currentColors.comparing.color, label: "Comparing")
+                            PreviewBar(color: viewModel.currentColors.pivot.color, label: "Pivot")
                             PreviewBar(color: viewModel.currentColors.sorted.color, label: "Sorted")
                         }
                         .frame(height: 80)

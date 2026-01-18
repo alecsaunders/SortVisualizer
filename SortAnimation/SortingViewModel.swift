@@ -513,7 +513,7 @@ class SortingViewModel: ObservableObject {
         guard !Task.isCancelled else { return low }
         
         let pivot = bars[high]
-        bars[high].state = .comparing
+        bars[high].state = .pivot  // Mark pivot with distinct color
         var i = low - 1
         
         for j in low..<high {
