@@ -9,13 +9,18 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = SortingViewModel()
+    @State private var showingAlgorithmInfo = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Controls at the top
-            controlsView
-                .padding()
-                .background(Color(NSColor.controlBackgroundColor))
+            // Control bar for sliders (always visible)
+            controlBar
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color(NSColor.windowBackgroundColor).opacity(0.5))
+                .background(.ultraThinMaterial)
+            
+            Divider()
             
             // Bar chart visualization
             CanvasBarChartView(
@@ -25,79 +30,89 @@ struct ContentView: View {
             .padding(20)
         }
         .frame(minWidth: 800, minHeight: 500)
+        .toolbar {
+            ToolbarItemGroup(placement: .automatic) {
+                Button {
+                    showingAlgorithmInfo.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .help("Algorithm information")
+                .popover(isPresented: $showingAlgorithmInfo, arrowEdge: .bottom) {
+                    AlgorithmInfoView(algorithm: viewModel.selectedAlgorithm)
+                }
+                
+                Picker("Algorithm", selection: $viewModel.selectedAlgorithm) {
+                    ForEach(SortAlgorithm.allCases, id: \.self) { algorithm in
+                        Text(algorithm.rawValue).tag(algorithm)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 180)
+                .disabled(viewModel.isSorting)
+                .help("Choose sorting algorithm")
+                
+                Button("Sort") {
+                    viewModel.startSort()
+                }
+                .disabled(viewModel.isSorting)
+                .keyboardShortcut(.return, modifiers: [])
+                .help("Start sorting animation (⏎)")
+                
+                Button("Reset") {
+                    viewModel.reset()
+                }
+                .help("Randomize bars (⌘R)")
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
     }
     
-    private var controlsView: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 20) {
-                // Algorithm Picker
-                HStack {
-                    Text("Algorithm:")
-                        .frame(width: 80, alignment: .trailing)
-                    Picker("", selection: $viewModel.selectedAlgorithm) {
-                        ForEach(SortAlgorithm.allCases, id: \.self) { algorithm in
-                            Text(algorithm.rawValue).tag(algorithm)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(width: 150)
-                    .disabled(viewModel.isSorting)
-                }
-                
-                // Speed Slider
-                HStack {
-                    Text("Speed:")
-                        .frame(width: 60, alignment: .trailing)
-                    Slider(value: $viewModel.speed, in: 1...1000, step: 1)
-                        .frame(width: 200)
-                    Text("\(Int(viewModel.speed)) ms")
-                        .frame(width: 60, alignment: .leading)
-                        .monospacedDigit()
-                }
-                
-                Spacer()
-            }
-            
-            HStack(spacing: 20) {
-                // Number of Elements
-                HStack {
-                    Text("Elements:")
-                        .frame(width: 80, alignment: .trailing)
-                    Slider(
-                        value: Binding(
-                            get: { Double(viewModel.numberOfElements) },
-                            set: { viewModel.numberOfElements = Int($0) }
-                        ),
-                        in: 10...200,
-                        step: 1
-                    )
-                    .frame(width: 200)
-                    .disabled(viewModel.isSorting)
-                    .onChange(of: viewModel.numberOfElements) { oldValue, newValue in
-                        if !viewModel.isSorting {
-                            viewModel.reset()
-                        }
-                    }
-                    Text("\(viewModel.numberOfElements)")
-                        .frame(width: 60, alignment: .leading)
-                        .monospacedDigit()
-                }
-                
-                // Buttons
-                HStack(spacing: 10) {
-                    Button("Sort") {
-                        viewModel.startSort()
-                    }
-                    .disabled(viewModel.isSorting)
-                    .buttonStyle(.borderedProminent)
-                    
-                    Button("Reset") {
+    private var controlBar: some View {
+        HStack(spacing: 24) {
+            // Elements control
+            HStack(spacing: 8) {
+                Text("Elements:")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 70, alignment: .trailing)
+                Slider(
+                    value: Binding(
+                        get: { Double(viewModel.numberOfElements) },
+                        set: { viewModel.numberOfElements = Int($0) }
+                    ),
+                    in: 10...200,
+                    step: 10
+                )
+                .frame(width: 200)
+                .disabled(viewModel.isSorting)
+                .onChange(of: viewModel.numberOfElements) { oldValue, newValue in
+                    if !viewModel.isSorting {
                         viewModel.reset()
                     }
                 }
-                
-                Spacer()
+                Text("\(viewModel.numberOfElements)")
+                    .monospacedDigit()
+                    .frame(width: 40, alignment: .leading)
+                    .foregroundStyle(.secondary)
             }
+            
+            Divider()
+                .frame(height: 20)
+            
+            // Speed control
+            HStack(spacing: 8) {
+                Text("Speed:")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 50, alignment: .trailing)
+                Slider(value: $viewModel.speed, in: 1...1000, step: 1)
+                    .frame(width: 200)
+                Text("\(Int(viewModel.speed)) ms")
+                    .monospacedDigit()
+                    .frame(width: 60, alignment: .leading)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
         }
     }
 }

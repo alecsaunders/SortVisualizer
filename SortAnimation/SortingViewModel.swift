@@ -257,20 +257,15 @@ class SortingViewModel: ObservableObject {
         while i < leftArray.count && j < rightArray.count {
             guard !Task.isCancelled else { break }
             
-            // Mark as comparing
-            bars[k].state = .comparing
-            
             if leftArray[i].value <= rightArray[j].value {
                 bars[k] = leftArray[i]
-                bars[k].state = .comparing
                 i += 1
             } else {
                 bars[k] = rightArray[j]
-                bars[k].state = .comparing
                 j += 1
             }
             
-            // Delay for visualization
+            bars[k].state = .comparing
             try? await Task.sleep(for: .milliseconds(Int(speed)))
             bars[k].state = .unsorted
             k += 1
@@ -317,9 +312,15 @@ class SortingViewModel: ObservableObject {
         
         let n = bars.count
         var output = [Bar]()
-        output.reserveCapacity(n) // Pre-allocate capacity for better performance
+        output.reserveCapacity(n)
         output.append(contentsOf: repeatElement(Bar(value: 0), count: n))
         var count = Array(repeating: 0, count: 10)
+        
+        // Mark all bars as comparing during counting phase
+        for i in 0..<n {
+            bars[i].state = .comparing
+        }
+        try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
         
         // Store count of occurrences
         for i in 0..<n {
@@ -336,26 +337,20 @@ class SortingViewModel: ObservableObject {
         for i in stride(from: n - 1, through: 0, by: -1) {
             guard !Task.isCancelled else { break }
             
-            bars[i].state = .comparing
-            
             let digit = (bars[i].value / exp) % 10
             output[count[digit] - 1] = bars[i]
             count[digit] -= 1
-            
-            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
-            bars[i].state = .unsorted
         }
         
-        // Copy output array to bars with animation
+        // Replace bars array with sorted output
+        bars = output
+        
+        // Animate showing the result
         for i in 0..<n {
             guard !Task.isCancelled else { break }
-            
-            if bars[i].id != output[i].id {
-                bars[i] = output[i]
-                bars[i].state = .comparing
-                try? await Task.sleep(for: .milliseconds(Int(speed)))
-                bars[i].state = .unsorted
-            }
+            bars[i].state = .comparing
+            try? await Task.sleep(for: .milliseconds(Int(speed)))
+            bars[i].state = .unsorted
         }
     }
     
@@ -512,52 +507,52 @@ class SortingViewModel: ObservableObject {
     private func countingSort() async {
         guard !Task.isCancelled else { return }
         
+        let n = bars.count
         let maxValue = bars.max(by: { $0.value < $1.value })?.value ?? 0
         let minValue = bars.min(by: { $0.value < $1.value })?.value ?? 0
         let range = maxValue - minValue + 1
         
         var count = Array(repeating: 0, count: range)
-        var output = [Bar]()
-        output.reserveCapacity(bars.count)
-        output.append(contentsOf: repeatElement(Bar(value: 0), count: bars.count))
         
-        // Store count of each element
-        for i in 0..<bars.count {
+        // Store count of each element and mark as comparing
+        for i in 0..<n {
             guard !Task.isCancelled else { break }
             bars[i].state = .comparing
             count[bars[i].value - minValue] += 1
             try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
-            bars[i].state = .unsorted
         }
         
-        // Change count to actual positions
+        // Build the sorted output array
+        let originalBars = bars
+        
+        // Calculate cumulative count
         for i in 1..<range {
             count[i] += count[i - 1]
         }
         
-        // Build output array
-        for i in stride(from: bars.count - 1, through: 0, by: -1) {
+        // Build output array in correct sorted order
+        var output = [Bar]()
+        output.reserveCapacity(n)
+        output.append(contentsOf: repeatElement(Bar(value: 0), count: n))
+        
+        for i in stride(from: n - 1, through: 0, by: -1) {
+            guard !Task.isCancelled else { break }
+            
+            let index = originalBars[i].value - minValue
+            output[count[index] - 1] = originalBars[i]
+            count[index] -= 1
+        }
+        
+        // Now replace entire array and animate the result
+        bars = output
+        
+        // Animate through showing each bar in its sorted position
+        for i in 0..<n {
             guard !Task.isCancelled else { break }
             
             bars[i].state = .comparing
-            let index = bars[i].value - minValue
-            output[count[index] - 1] = bars[i]
-            count[index] -= 1
-            
-            try? await Task.sleep(for: .milliseconds(Int(speed / 2)))
+            try? await Task.sleep(for: .milliseconds(Int(speed)))
             bars[i].state = .unsorted
-        }
-        
-        // Copy output to bars with animation
-        for i in 0..<bars.count {
-            guard !Task.isCancelled else { break }
-            
-            if bars[i].id != output[i].id {
-                bars[i] = output[i]
-                bars[i].state = .comparing
-                try? await Task.sleep(for: .milliseconds(Int(speed)))
-                bars[i].state = .unsorted
-            }
         }
     }
     
