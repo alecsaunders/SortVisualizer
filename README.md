@@ -14,6 +14,7 @@ A high-performance macOS app built with SwiftUI that visualizes sorting algorith
 - 🎛️ **Real-time Controls** - Adjust speed while sorting is running
 - 🎨 **Customizable Colors** - Choose from Classic, Educational, or Custom color schemes
 - 🔊 **Sound Effects** - Audibilization following Sound of Sorting methodology
+- 🌊 **Final Sweep** - Visual and audio confirmation wave when sorting completes
 - 👁️ **Step-by-Step Mode** - Pause, play, and step through algorithms
 - 🎨 **Inspector Sidebar** - All controls in one convenient panel
 - 📊 **Scalable** - From 10 to 200 elements
@@ -80,6 +81,11 @@ All configuration controls are accessed via the Inspector sidebar (toggle with t
   - 5-10x faster than traditional view-based approach
   - Single view instead of 100-200 individual views
   - Maintains 60fps even with 200 bars at 1ms speed
+
+- **Throttled Updates** - Smart publishing reduces UI overhead
+  - Working copy for mutations, throttled publishes at 60fps
+  - Prevents excessive SwiftUI diffing and re-renders
+  - Version-based invalidation for final sweep animations
 
 - **Memory Management**
   - Pre-allocated arrays with `reserveCapacity()`
@@ -153,6 +159,7 @@ open SortAnimation.xcodeproj
 - Watch **Radix Sort** organize by digits (ones, tens, hundreds)
 - **Step through algorithms** - Use the Step button or → key to advance one operation at a time
 - **Enable sound** - Toggle sound effects to hear the audibilization of comparisons
+- **Final sweep** - After sorting completes, watch the satisfying visual and audio confirmation wave
 - **Customize colors** - Switch to Classic mode for white/red, or create your own scheme
 - Increase to **200 elements** to stress-test performance
 - Adjust speed in **real-time** to slow down interesting moments
@@ -199,8 +206,20 @@ open SortAnimation.xcodeproj
 
 MIT License - see LICENSE file for details
 
+## Acknowledgments
+
+This project is inspired by [The Sound of Sorting](https://panthema.net/2013/sound-of-sorting/) by Timo Bingmann (2013), which pioneered the visualization and audibilization of sorting algorithms. The original Sound of Sorting is licensed under GPL v3 and available at [GitHub](https://github.com/bingmann/sound-of-sorting).
+
+**Sort Visualizer** is an independent implementation written from scratch in Swift/SwiftUI, incorporating similar concepts:
+- Visual representation of sorting algorithms with colored bars
+- Audibilization using tone frequencies mapped to element values
+- Final sweep animation confirming sort completion
+- Multiple sorting algorithm demonstrations
+
+Special thanks to Timo Bingmann for creating the original Sound of Sorting project that inspired sorting algorithm visualizers worldwide.
+
 ## Credits
 
 Created by Alec Saunders
 
-Built with SwiftUI and the Canvas API for maximum performance. Sound effects inspired by [The Sound of Sorting](https://panthema.net/2013/sound-of-sorting/) by Timo Bingmann.
+Built with SwiftUI and the Canvas API for maximum performance.
