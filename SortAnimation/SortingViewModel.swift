@@ -24,6 +24,13 @@ class SortingViewModel: ObservableObject {
     private var lastPublishTime = Date()
     private let publishInterval: TimeInterval = 1.0 / 60.0 // 60fps
     
+    // Statistics tracking
+    @Published var comparisonCount: Int = 0
+    @Published var swapCount: Int = 0
+    @Published var arrayAccessCount: Int = 0
+    @Published var elapsedTime: TimeInterval = 0
+    private var sortStartTime: Date?
+    
     // Color scheme
     @Published var colorSchemeType: ColorSchemeType = .educational {
         didSet {
@@ -84,6 +91,13 @@ class SortingViewModel: ObservableObject {
         isSorting = false
         isPaused = false
         
+        // Reset statistics
+        comparisonCount = 0
+        swapCount = 0
+        arrayAccessCount = 0
+        elapsedTime = 0
+        sortStartTime = nil
+        
         let values = Array(1...numberOfElements).shuffled()
         bars.removeAll(keepingCapacity: true) // Keep capacity for reuse
         bars.reserveCapacity(numberOfElements) // Ensure capacity
@@ -122,7 +136,24 @@ class SortingViewModel: ObservableObject {
         workingBars = bars // Initialize working copy
         lastPublishTime = Date()
         
+        // Initialize statistics
+        comparisonCount = 0
+        swapCount = 0
+        arrayAccessCount = 0
+        elapsedTime = 0
+        sortStartTime = Date()
+        
         sortTask = Task {
+            // Update elapsed time periodically
+            let timerTask = Task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    if let startTime = sortStartTime {
+                        elapsedTime = Date().timeIntervalSince(startTime)
+                    }
+                }
+            }
+            
             switch selectedAlgorithm {
             case .bubble:
                 await bubbleSort()
@@ -146,6 +177,8 @@ class SortingViewModel: ObservableObject {
                 await cocktailSort()
             }
             
+            timerTask.cancel()
+            
             if !Task.isCancelled {
                 // Mark all as sorted
                 for index in workingBars.indices {
@@ -153,6 +186,12 @@ class SortingViewModel: ObservableObject {
                 }
                 // Force final publish
                 publishNow()
+                
+                // Final elapsed time update
+                if let startTime = sortStartTime {
+                    elapsedTime = Date().timeIntervalSince(startTime)
+                }
+                
                 isSorting = false
             }
         }
@@ -175,6 +214,20 @@ class SortingViewModel: ObservableObject {
         lastPublishTime = Date()
     }
     
+    // MARK: - Statistics Helpers
+    
+    private func incrementComparison() {
+        comparisonCount += 1
+    }
+    
+    private func incrementSwap() {
+        swapCount += 1
+    }
+    
+    private func incrementArrayAccess(_ count: Int = 1) {
+        arrayAccessCount += count
+    }
+    
     private func bubbleSort() async {
         let n = workingBars.count
         
@@ -188,13 +241,14 @@ class SortingViewModel: ObservableObject {
                 // Mark bars being compared
                 workingBars[j].state = .comparing
                 workingBars[j + 1].state = .comparing
+                incrementArrayAccess(2)
                 publishIfNeeded()
                 
-                // Play comparison sound
+                // Play comparison sound (tracks comparison + 2 accesses)
                 playComparisonSound(value1: workingBars[j].value, value2: workingBars[j + 1].value)
                 
                 if shouldSwap(workingBars[j].value, workingBars[j + 1].value) {
-                    // Perform swap with animation
+                    // Perform swap with animation (tracks swap + 4 accesses)
                     await swapBars(at: j, and: j + 1)
                     swapped = true
                 }
@@ -202,9 +256,11 @@ class SortingViewModel: ObservableObject {
                 // Reset state after comparison
                 if workingBars[j].state == .comparing {
                     workingBars[j].state = .unsorted
+                    incrementArrayAccess()
                 }
                 if workingBars[j + 1].state == .comparing {
                     workingBars[j + 1].state = .unsorted
+                    incrementArrayAccess()
                 }
                 publishIfNeeded()
             }
@@ -212,6 +268,7 @@ class SortingViewModel: ObservableObject {
             // Mark the last element of this pass as sorted
             if i < n {
                 workingBars[n - i - 1].state = .sorted
+                incrementArrayAccess()
                 publishIfNeeded()
             }
             
@@ -282,6 +339,10 @@ class SortingViewModel: ObservableObject {
         guard index1 != index2, index1 >= 0, index2 >= 0, 
               index1 < workingBars.count, index2 < workingBars.count else { return }
         
+        // Track statistics
+        incrementSwap()
+        incrementArrayAccess(4) // 2 reads + 2 writes
+        
         // Calculate the distance between bars
         let distance = CGFloat(abs(index2 - index1))
         
@@ -342,6 +403,8 @@ class SortingViewModel: ObservableObject {
     }
     
     private func playComparisonSound(value1: Int, value2: Int) {
+        incrementComparison()
+        incrementArrayAccess(2) // 2 reads for comparison
         soundGenerator.playComparison(
             value1: value1,
             value2: value2,

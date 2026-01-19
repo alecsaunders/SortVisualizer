@@ -195,6 +195,42 @@ struct InspectorView: View {
                     }
                 }
                 
+                Divider()
+                
+                // Statistics Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Statistics")
+                        .font(.headline)
+                    
+                    if viewModel.isSorting || viewModel.comparisonCount > 0 {
+                        VStack(alignment: .leading, spacing: 8) {
+                            StatisticRow(
+                                label: "Comparisons",
+                                value: "\(viewModel.comparisonCount)"
+                            )
+                            
+                            StatisticRow(
+                                label: "Swaps",
+                                value: "\(viewModel.swapCount)"
+                            )
+                            
+                            StatisticRow(
+                                label: "Array Access",
+                                value: "\(viewModel.arrayAccessCount)"
+                            )
+                            
+                            StatisticRow(
+                                label: "Time",
+                                value: String(format: "%.2f s", viewModel.elapsedTime)
+                            )
+                        }
+                    } else {
+                        Text("Run an algorithm to see statistics")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
                 Spacer()
             }
             .padding()
@@ -247,6 +283,23 @@ struct PreviewBar: View {
                 .fill(color)
             Text(label)
                 .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+struct StatisticRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
     }
