@@ -195,12 +195,16 @@ class SortingViewModel: ObservableObject {
             timerTask.cancel()
             
             if !Task.isCancelled {
-                // Mark all as sorted
+                // Mark all bars as sorted
                 for index in workingBars.indices {
                     workingBars[index].state = .sorted
                 }
-                // Force final publish (includes statistics)
+                
+                // Force final publish immediately to show all green bars
                 publishNow()
+                
+                // Add a brief pause to let users see the final sorted state
+                try? await Task.sleep(for: .milliseconds(100))
                 
                 // Final elapsed time update
                 if let startTime = sortStartTime {
@@ -581,10 +585,16 @@ class SortingViewModel: ObservableObject {
                 workingBars[i].state = .comparing
                 publishIfNeeded()
                 await delay(Int(speed))
-                workingBars[i].state = .unsorted
+                workingBars[i].state = .sorted
                 publishIfNeeded()
             }
         }
+        
+        // Ensure all bars are marked as sorted (important for ascending)
+        for index in workingBars.indices {
+            workingBars[index].state = .sorted
+        }
+        publishNow()
     }
     
     private func countingSort(exp: Int) async {
@@ -627,21 +637,21 @@ class SortingViewModel: ObservableObject {
         workingBars = output
         publishNow()
         
-        // Animate showing the result
-        for i in 0..<n {
-            guard !Task.isCancelled else { break }
-            workingBars[i].state = .comparing
-            publishIfNeeded()
-            await delay(Int(speed))
-            workingBars[i].state = .unsorted
-            publishIfNeeded()
-        }
+        // Note: No animation here since this is called multiple times by radixSort
+        // The final sorted state will be shown by radixSort's cleanup
     }
     
     // MARK: - Quick Sort
     
     private func quickSort() async {
         await quickSortHelper(low: 0, high: workingBars.count - 1)
+        
+        // Immediately set ALL bars to sorted state and publish
+        for index in workingBars.indices {
+            workingBars[index].state = .sorted
+        }
+        // Force immediate publish to avoid any race conditions with throttling
+        publishNow()
     }
     
     private func quickSortHelper(low: Int, high: Int) async {
@@ -848,6 +858,12 @@ class SortingViewModel: ObservableObject {
             
             gap /= 2
         }
+        
+        // Ensure all bars are marked as sorted
+        for index in workingBars.indices {
+            workingBars[index].state = .sorted
+        }
+        publishNow()
     }
     
     // MARK: - Counting Sort
@@ -894,18 +910,12 @@ class SortingViewModel: ObservableObject {
         
         // Now replace entire array and animate the result
         workingBars = sortDirection == .ascending ? output : output.reversed()
-        publishNow()
         
-        // Animate through showing each bar in its sorted position
-        for i in 0..<n {
-            guard !Task.isCancelled else { break }
-            
-            workingBars[i].state = .comparing
-            publishIfNeeded()
-            await delay(Int(speed))
-            workingBars[i].state = .unsorted
-            publishIfNeeded()
+        // Set all bars to sorted state (skip individual animation to avoid throttling issues)
+        for index in workingBars.indices {
+            workingBars[index].state = .sorted
         }
+        publishNow()
     }
     
     // MARK: - Cocktail Shaker Sort
