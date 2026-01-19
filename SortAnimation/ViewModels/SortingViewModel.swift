@@ -191,6 +191,14 @@ class SortingViewModel: ObservableObject {
                 await countingSort()
             case .cocktail:
                 await cocktailSort()
+            case .gnome:
+                await gnomeSort()
+            case .comb:
+                await combSort()
+            case .cycle:
+                await cycleSort()
+            case .tim:
+                await timSort()
             }
             
             timerTask.cancel()
@@ -964,6 +972,326 @@ class SortingViewModel: ObservableObject {
             workingBars[i].state = .sorted
         }
         publishIfNeeded()
+    }
+    
+    // MARK: - Gnome Sort
+    
+    private func gnomeSort() async {
+        var index = 0
+        
+        while index < workingBars.count {
+            guard !Task.isCancelled else { break }
+            
+            if index == 0 {
+                index += 1
+            } else {
+                visualizeComparison(at: index, and: index - 1)
+                
+                if shouldSwap(workingBars[index - 1].value, workingBars[index].value) {
+                    await swapBars(at: index, and: index - 1)
+                    index -= 1
+                } else {
+                    index += 1
+                }
+                
+                resetComparingBars(at: index, index - 1)
+                publishIfNeeded()
+            }
+        }
+        
+        markAllAsSorted()
+    }
+    
+    // MARK: - Comb Sort
+    
+    private func combSort() async {
+        var gap = workingBars.count
+        let shrink: Double = 1.3
+        var sorted = false
+        
+        while !sorted {
+            guard !Task.isCancelled else { break }
+            
+            // Update gap value
+            gap = Int(Double(gap) / shrink)
+            if gap <= 1 {
+                gap = 1
+                sorted = true
+            }
+            
+            // Compare all elements with current gap
+            var i = 0
+            while i + gap < workingBars.count {
+                guard !Task.isCancelled else { break }
+                
+                visualizeComparison(at: i, and: i + gap)
+                
+                if shouldSwap(workingBars[i].value, workingBars[i + gap].value) {
+                    await swapBars(at: i, and: i + gap)
+                    sorted = false
+                }
+                
+                resetComparingBars(at: i, i + gap)
+                publishIfNeeded()
+                i += 1
+            }
+        }
+        
+        markAllAsSorted()
+    }
+    
+    // MARK: - Cycle Sort
+    
+    private func cycleSort() async {
+        let n = workingBars.count
+        
+        // Loop through the array to find cycles
+        for cycleStart in 0..<(n - 1) {
+            guard !Task.isCancelled else { break }
+            
+            let item = workingBars[cycleStart]
+            workingBars[cycleStart].state = .pointer
+            publishIfNeeded()
+            await delay(Int(speed))
+            
+            // Find position where we put the item
+            var pos = cycleStart
+            for i in (cycleStart + 1)..<n {
+                guard !Task.isCancelled else { break }
+                
+                workingBars[i].state = .comparing
+                publishIfNeeded()
+                await delay(Int(speed / 2))
+                
+                playComparisonSound(value1: workingBars[i].value, value2: item.value)
+                
+                if compare(workingBars[i].value, item.value) {
+                    pos += 1
+                }
+                
+                workingBars[i].state = .unsorted
+                publishIfNeeded()
+            }
+            
+            // If item is already in correct position
+            if pos == cycleStart {
+                workingBars[cycleStart].state = .sorted
+                publishIfNeeded()
+                continue
+            }
+            
+            // Skip duplicates
+            while pos < n && item.value == workingBars[pos].value {
+                pos += 1
+            }
+            
+            // Put the item to its right position
+            if pos != cycleStart && pos < n {
+                await swapBars(at: cycleStart, and: pos)
+            }
+            
+            // Rotate rest of the cycle
+            var currentPos = pos
+            while currentPos != cycleStart {
+                guard !Task.isCancelled else { break }
+                
+                let currentItem = workingBars[cycleStart]
+                pos = cycleStart
+                
+                // Find position where we put the element
+                for i in (cycleStart + 1)..<n {
+                    guard !Task.isCancelled else { break }
+                    
+                    workingBars[i].state = .comparing
+                    publishIfNeeded()
+                    
+                    playComparisonSound(value1: workingBars[i].value, value2: currentItem.value)
+                    
+                    if compare(workingBars[i].value, currentItem.value) {
+                        pos += 1
+                    }
+                    
+                    workingBars[i].state = .unsorted
+                    publishIfNeeded()
+                }
+                
+                // Skip duplicates
+                while pos < n && currentItem.value == workingBars[pos].value {
+                    pos += 1
+                }
+                
+                // Put the item to its right position
+                if pos < n && currentItem.value != workingBars[pos].value {
+                    await swapBars(at: cycleStart, and: pos)
+                }
+                
+                currentPos = pos
+            }
+            
+            workingBars[cycleStart].state = .sorted
+            publishIfNeeded()
+        }
+        
+        // Mark last element as sorted
+        if n > 0 {
+            workingBars[n - 1].state = .sorted
+        }
+        publishIfNeeded()
+    }
+    
+    // MARK: - Tim Sort
+    
+    private func timSort() async {
+        let minRun = 32
+        let n = workingBars.count
+        
+        // Sort individual runs using insertion sort
+        var start = 0
+        while start < n {
+            guard !Task.isCancelled else { break }
+            
+            let end = min(start + minRun - 1, n - 1)
+            await timInsertionSort(left: start, right: end)
+            
+            // Mark this run as processed
+            for i in start...end {
+                if i < workingBars.count {
+                    workingBars[i].state = .pointer
+                }
+            }
+            publishIfNeeded()
+            await delay(Int(speed))
+            
+            // Reset pointer state
+            for i in start...end {
+                if i < workingBars.count {
+                    workingBars[i].state = .unsorted
+                }
+            }
+            
+            start += minRun
+        }
+        
+        // Merge sorted runs
+        var size = minRun
+        while size < n {
+            guard !Task.isCancelled else { break }
+            
+            var left = 0
+            while left < n {
+                guard !Task.isCancelled else { break }
+                
+                let mid = left + size - 1
+                let right = min(left + size * 2 - 1, n - 1)
+                
+                if mid < right {
+                    await timMerge(left: left, mid: mid, right: right)
+                }
+                
+                left += size * 2
+            }
+            size *= 2
+        }
+        
+        markAllAsSorted()
+    }
+    
+    private func timInsertionSort(left: Int, right: Int) async {
+        for i in (left + 1)...right {
+            guard !Task.isCancelled else { break }
+            guard i < workingBars.count else { break }
+            
+            let key = workingBars[i]
+            workingBars[i].state = .comparing
+            publishIfNeeded()
+            var j = i - 1
+            
+            while j >= left {
+                guard !Task.isCancelled else { break }
+                guard j < workingBars.count else { break }
+                
+                if shouldSwap(workingBars[j].value, key.value) {
+                    workingBars[j].state = .comparing
+                    workingBars[j + 1].state = .comparing
+                    publishIfNeeded()
+                    
+                    playComparisonSound(value1: workingBars[j].value, value2: key.value)
+                    
+                    await swapBars(at: j, and: j + 1)
+                    
+                    workingBars[j + 1].state = .unsorted
+                    publishIfNeeded()
+                    j -= 1
+                } else {
+                    break
+                }
+            }
+            
+            if i < workingBars.count {
+                workingBars[i].state = .unsorted
+                publishIfNeeded()
+            }
+        }
+    }
+    
+    private func timMerge(left: Int, mid: Int, right: Int) async {
+        guard !Task.isCancelled else { return }
+        guard left < workingBars.count && mid < workingBars.count && right < workingBars.count else { return }
+        
+        let leftArray = Array(workingBars[left...mid])
+        let rightArray = Array(workingBars[(mid + 1)...right])
+        
+        var i = 0, j = 0, k = left
+        
+        while i < leftArray.count && j < rightArray.count {
+            guard !Task.isCancelled else { break }
+            guard k < workingBars.count else { break }
+            
+            playComparisonSound(value1: leftArray[i].value, value2: rightArray[j].value)
+            
+            if compareOrEqual(leftArray[i].value, rightArray[j].value) {
+                workingBars[k] = leftArray[i]
+                i += 1
+            } else {
+                workingBars[k] = rightArray[j]
+                j += 1
+            }
+            
+            workingBars[k].state = .comparing
+            publishIfNeeded()
+            await delay(Int(speed))
+            workingBars[k].state = .unsorted
+            publishIfNeeded()
+            k += 1
+        }
+        
+        while i < leftArray.count {
+            guard !Task.isCancelled else { break }
+            guard k < workingBars.count else { break }
+            
+            workingBars[k] = leftArray[i]
+            workingBars[k].state = .comparing
+            publishIfNeeded()
+            await delay(Int(speed))
+            workingBars[k].state = .unsorted
+            publishIfNeeded()
+            i += 1
+            k += 1
+        }
+        
+        while j < rightArray.count {
+            guard !Task.isCancelled else { break }
+            guard k < workingBars.count else { break }
+            
+            workingBars[k] = rightArray[j]
+            workingBars[k].state = .comparing
+            publishIfNeeded()
+            await delay(Int(speed))
+            workingBars[k].state = .unsorted
+            publishIfNeeded()
+            j += 1
+            k += 1
+        }
     }
     
     // MARK: - Persistence

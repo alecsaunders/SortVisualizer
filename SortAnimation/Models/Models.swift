@@ -25,7 +25,7 @@ enum SortDirection: String, CaseIterable, Identifiable {
 /// Available sorting algorithms in the visualizer.
 ///
 /// Each case represents a different sorting algorithm with unique characteristics:
-/// - Comparison-based sorts: bubble, selection, insertion, merge, quick, heap, shell, cocktail
+/// - Comparison-based sorts: bubble, selection, insertion, merge, quick, heap, shell, cocktail, gnome, comb, cycle, tim
 /// - Non-comparison sorts: counting, radix
 enum SortAlgorithm: String, CaseIterable {
     /// Bubble Sort - O(n²) comparison sort that repeatedly steps through the list
@@ -57,6 +57,18 @@ enum SortAlgorithm: String, CaseIterable {
     
     /// Cocktail Shaker Sort - O(n²) bidirectional bubble sort variant
     case cocktail = "Cocktail Shaker Sort"
+    
+    /// Gnome Sort - O(n²) simple comparison sort similar to insertion sort
+    case gnome = "Gnome Sort"
+    
+    /// Comb Sort - O(n log n) improved bubble sort using gap sequences
+    case comb = "Comb Sort"
+    
+    /// Cycle Sort - O(n²) in-place sort minimizing writes to memory
+    case cycle = "Cycle Sort"
+    
+    /// Tim Sort - O(n log n) hybrid stable sort combining merge and insertion sort
+    case tim = "Tim Sort"
 }
 
 /// Visual state of a bar during sorting operations.

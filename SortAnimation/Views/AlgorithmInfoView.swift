@@ -145,6 +145,38 @@ struct AlgorithmInfoView: View {
                 stable: true,
                 description: "Non-comparison algorithm that processes integers digit by digit, starting from the least significant digit. Uses counting sort as a subroutine for each digit position."
             )
+            
+        case .gnome:
+            return AlgorithmInfo(
+                timeComplexity: "O(n²)",
+                spaceComplexity: "O(1)",
+                stable: true,
+                description: "Simple sorting algorithm similar to insertion sort. Like a garden gnome sorting flower pots, it moves forward if the current element is in order, or swaps and moves backward if not."
+            )
+            
+        case .comb:
+            return AlgorithmInfo(
+                timeComplexity: "O(n²) worst, O(n log n) avg",
+                spaceComplexity: "O(1)",
+                stable: false,
+                description: "Improved bubble sort that eliminates small values near the end (turtles) by using gap sequences. Starts with large gaps and shrinks by a factor of 1.3 until gap becomes 1."
+            )
+            
+        case .cycle:
+            return AlgorithmInfo(
+                timeComplexity: "O(n²)",
+                spaceComplexity: "O(1)",
+                stable: false,
+                description: "Minimizes the number of writes to the array by placing each element directly into its final position. Useful when write operations are expensive, such as with flash memory."
+            )
+            
+        case .tim:
+            return AlgorithmInfo(
+                timeComplexity: "O(n log n)",
+                spaceComplexity: "O(n)",
+                stable: true,
+                description: "Hybrid algorithm combining merge sort and insertion sort, used by Python and Java. Divides data into small runs, sorts them with insertion sort, then merges. Performs exceptionally well on real-world data."
+            )
         }
     }
 }

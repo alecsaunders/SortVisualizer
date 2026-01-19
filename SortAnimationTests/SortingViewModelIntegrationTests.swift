@@ -48,12 +48,13 @@ struct SortingViewModelIntegrationTests {
     
     @Test func sortAlgorithmCases() {
         let algorithms = SortAlgorithm.allCases
-        #expect(algorithms.count == 10)
+        #expect(algorithms.count == 14)
         
         let expectedNames = [
             "Bubble Sort", "Selection Sort", "Merge Sort", "Insertion Sort",
             "Radix Sort", "Quick Sort", "Heap Sort", "Shell Sort",
-            "Counting Sort", "Cocktail Shaker Sort"
+            "Counting Sort", "Cocktail Shaker Sort", "Gnome Sort", "Comb Sort",
+            "Cycle Sort", "Tim Sort"
         ]
         
         for (algorithm, name) in zip(algorithms, expectedNames) {
@@ -297,8 +298,8 @@ struct SortingViewModelIntegrationTests {
         viewModel.colorSchemeType = .classic
         #expect(viewModel.currentColors == .classic)
         
-        viewModel.colorSchemeType = .educational
-        #expect(viewModel.currentColors == .educational)
+        viewModel.colorSchemeType = .vibrant
+        #expect(viewModel.currentColors == .vibrant)
         
         viewModel.colorSchemeType = .custom
         #expect(viewModel.currentColors == viewModel.customColors)

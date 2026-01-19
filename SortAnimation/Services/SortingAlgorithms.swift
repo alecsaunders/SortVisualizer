@@ -35,6 +35,10 @@ enum SortOrder {
 /// - ``heapSort(_:order:)``
 /// - ``shellSort(_:order:)``
 /// - ``cocktailSort(_:order:)``
+/// - ``gnomeSort(_:order:)``
+/// - ``combSort(_:order:)``
+/// - ``cycleSort(_:order:)``
+/// - ``timSort(_:order:)``
 ///
 /// ### Non-Comparison Sorts
 /// - ``countingSort(_:order:)``
@@ -561,5 +565,298 @@ struct SortingAlgorithms {
         }
         
         return output
+    }
+    
+    // MARK: - Gnome Sort
+    
+    /// Sorts an array using the gnome sort algorithm.
+    ///
+    /// Gnome sort (also known as stupid sort) is similar to insertion sort but moves elements
+    /// to their proper place by a series of swaps, like a garden gnome sorting flower pots.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) worst case, O(n) best case
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is stable and very simple, but inefficient for large arrays.
+    static func gnomeSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
+        guard array.count > 1 else { return array }
+        var result = array
+        var index = 0
+        
+        while index < result.count {
+            if index == 0 {
+                index += 1
+            } else {
+                let shouldSwap = order == .ascending ?
+                    result[index] < result[index - 1] :
+                    result[index] > result[index - 1]
+                
+                if shouldSwap {
+                    result.swapAt(index, index - 1)
+                    index -= 1
+                } else {
+                    index += 1
+                }
+            }
+        }
+        
+        return result
+    }
+    
+    // MARK: - Comb Sort
+    
+    /// Sorts an array using the comb sort algorithm.
+    ///
+    /// Comb sort improves on bubble sort by using gap sequences larger than 1.
+    /// It eliminates small values near the end of the list (turtles) that slow down bubble sort.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) worst case, O(n log n) average case
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: Uses a shrink factor of 1.3 for the gap sequence, which is empirically optimal.
+    static func combSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
+        guard array.count > 1 else { return array }
+        var result = array
+        var gap = result.count
+        let shrink: Double = 1.3
+        var sorted = false
+        
+        while !sorted {
+            // Update gap value
+            gap = Int(Double(gap) / shrink)
+            if gap <= 1 {
+                gap = 1
+                sorted = true
+            }
+            
+            // Compare all elements with current gap
+            var i = 0
+            while i + gap < result.count {
+                let shouldSwap = order == .ascending ?
+                    result[i] > result[i + gap] :
+                    result[i] < result[i + gap]
+                
+                if shouldSwap {
+                    result.swapAt(i, i + gap)
+                    sorted = false
+                }
+                i += 1
+            }
+        }
+        
+        return result
+    }
+    
+    // MARK: - Cycle Sort
+    
+    /// Sorts an array using the cycle sort algorithm.
+    ///
+    /// Cycle sort is an in-place, unstable sorting algorithm that minimizes the number of writes
+    /// to the original array. It's useful when write operations are significantly more expensive
+    /// than reads.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) in all cases
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: Minimizes writes to memory, making it useful for flash memory or EEPROM.
+    static func cycleSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
+        guard array.count > 1 else { return array }
+        var result = array
+        let n = result.count
+        
+        // Loop through the array to find cycles
+        for cycleStart in 0..<(n - 1) {
+            var item = result[cycleStart]
+            
+            // Find position where we put the item
+            var pos = cycleStart
+            for i in (cycleStart + 1)..<n {
+                let shouldCount = order == .ascending ?
+                    result[i] < item :
+                    result[i] > item
+                
+                if shouldCount {
+                    pos += 1
+                }
+            }
+            
+            // If item is already in correct position
+            if pos == cycleStart {
+                continue
+            }
+            
+            // Skip duplicates
+            while item == result[pos] {
+                pos += 1
+            }
+            
+            // Put the item to its right position
+            if pos != cycleStart {
+                swap(&item, &result[pos])
+            }
+            
+            // Rotate rest of the cycle
+            while pos != cycleStart {
+                pos = cycleStart
+                
+                // Find position where we put the element
+                for i in (cycleStart + 1)..<n {
+                    let shouldCount = order == .ascending ?
+                        result[i] < item :
+                        result[i] > item
+                    
+                    if shouldCount {
+                        pos += 1
+                    }
+                }
+                
+                // Skip duplicates
+                while item == result[pos] {
+                    pos += 1
+                }
+                
+                // Put the item to its right position
+                if item != result[pos] {
+                    swap(&item, &result[pos])
+                }
+            }
+        }
+        
+        return result
+    }
+    
+    // MARK: - Tim Sort
+    
+    /// Sorts an array using the Tim sort algorithm.
+    ///
+    /// Tim sort is a hybrid stable sorting algorithm derived from merge sort and insertion sort.
+    /// It's designed to perform well on many kinds of real-world data. It's the default sorting
+    /// algorithm in Python and Java.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n log n) worst case, O(n) best case
+    ///   - Space: O(n)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is stable and adapts to partially sorted data.
+    static func timSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
+        guard array.count > 1 else { return array }
+        
+        let minRun = 32
+        var result = array
+        let n = result.count
+        
+        // Sort individual runs using insertion sort
+        var start = 0
+        while start < n {
+            let end = min(start + minRun - 1, n - 1)
+            result = timInsertionSort(result, left: start, right: end, order: order)
+            start += minRun
+        }
+        
+        // Merge sorted runs
+        var size = minRun
+        while size < n {
+            var left = 0
+            while left < n {
+                let mid = left + size - 1
+                let right = min(left + size * 2 - 1, n - 1)
+                
+                if mid < right {
+                    result = timMerge(result, left: left, mid: mid, right: right, order: order)
+                }
+                
+                left += size * 2
+            }
+            size *= 2
+        }
+        
+        return result
+    }
+    
+    private static func timInsertionSort<T: Comparable>(_ array: [T], left: Int, right: Int, order: SortOrder) -> [T] {
+        var result = array
+        
+        for i in (left + 1)...right {
+            let key = result[i]
+            var j = i - 1
+            
+            while j >= left {
+                let shouldMove = order == .ascending ?
+                    result[j] > key :
+                    result[j] < key
+                
+                if shouldMove {
+                    result[j + 1] = result[j]
+                    j -= 1
+                } else {
+                    break
+                }
+            }
+            
+            result[j + 1] = key
+        }
+        
+        return result
+    }
+    
+    private static func timMerge<T: Comparable>(_ array: [T], left: Int, mid: Int, right: Int, order: SortOrder) -> [T] {
+        var result = array
+        
+        let leftArray = Array(result[left...mid])
+        let rightArray = Array(result[(mid + 1)...right])
+        
+        var i = 0, j = 0, k = left
+        
+        while i < leftArray.count && j < rightArray.count {
+            let shouldPickLeft = order == .ascending ?
+                leftArray[i] <= rightArray[j] :
+                leftArray[i] >= rightArray[j]
+            
+            if shouldPickLeft {
+                result[k] = leftArray[i]
+                i += 1
+            } else {
+                result[k] = rightArray[j]
+                j += 1
+            }
+            k += 1
+        }
+        
+        while i < leftArray.count {
+            result[k] = leftArray[i]
+            i += 1
+            k += 1
+        }
+        
+        while j < rightArray.count {
+            result[k] = rightArray[j]
+            j += 1
+            k += 1
+        }
+        
+        return result
     }
 }

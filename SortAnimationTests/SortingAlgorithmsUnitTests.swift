@@ -266,4 +266,155 @@ struct SortingAlgorithmsUnitTests {
         let result = SortingAlgorithms.cocktailSort(array)
         #expect(result == [1, 2, 3, 4, 5])
     }
+    
+    // MARK: - Gnome Sort Tests
+    
+    @Test func gnomeSortAscending() {
+        let result = SortingAlgorithms.gnomeSort(unsortedArray, order: .ascending)
+        #expect(result == sortedAscending)
+    }
+    
+    @Test func gnomeSortDescending() {
+        let result = SortingAlgorithms.gnomeSort(unsortedArray, order: .descending)
+        #expect(result == sortedDescending)
+    }
+    
+    @Test func gnomeSortAlreadySorted() {
+        let result = SortingAlgorithms.gnomeSort(alreadySorted, order: .ascending)
+        #expect(result == alreadySorted)
+    }
+    
+    @Test func gnomeSortWithDuplicates() {
+        let result = SortingAlgorithms.gnomeSort(duplicates, order: .ascending)
+        #expect(result == duplicatesSorted)
+    }
+    
+    // MARK: - Comb Sort Tests
+    
+    @Test func combSortAscending() {
+        let result = SortingAlgorithms.combSort(unsortedArray, order: .ascending)
+        #expect(result == sortedAscending)
+    }
+    
+    @Test func combSortDescending() {
+        let result = SortingAlgorithms.combSort(unsortedArray, order: .descending)
+        #expect(result == sortedDescending)
+    }
+    
+    @Test func combSortReverseSorted() {
+        let result = SortingAlgorithms.combSort(reverseSorted, order: .ascending)
+        #expect(result == alreadySorted)
+    }
+    
+    @Test func combSortWithDuplicates() {
+        let result = SortingAlgorithms.combSort(duplicates, order: .ascending)
+        #expect(result == duplicatesSorted)
+    }
+    
+    // MARK: - Cycle Sort Tests
+    
+    @Test func cycleSortAscending() {
+        let result = SortingAlgorithms.cycleSort(unsortedArray, order: .ascending)
+        #expect(result == sortedAscending)
+    }
+    
+    @Test func cycleSortDescending() {
+        let result = SortingAlgorithms.cycleSort(unsortedArray, order: .descending)
+        #expect(result == sortedDescending)
+    }
+    
+    @Test func cycleSortAlreadySorted() {
+        let result = SortingAlgorithms.cycleSort(alreadySorted, order: .ascending)
+        #expect(result == alreadySorted)
+    }
+    
+    @Test func cycleSortWithDuplicates() {
+        let result = SortingAlgorithms.cycleSort(duplicates, order: .ascending)
+        #expect(result == duplicatesSorted)
+    }
+    
+    // MARK: - Tim Sort Tests
+    
+    @Test func timSortAscending() {
+        let result = SortingAlgorithms.timSort(unsortedArray, order: .ascending)
+        #expect(result == sortedAscending)
+    }
+    
+    @Test func timSortDescending() {
+        let result = SortingAlgorithms.timSort(unsortedArray, order: .descending)
+        #expect(result == sortedDescending)
+    }
+    
+    @Test func timSortAlreadySorted() {
+        let result = SortingAlgorithms.timSort(alreadySorted, order: .ascending)
+        #expect(result == alreadySorted)
+    }
+    
+    @Test func timSortReverseSorted() {
+        let result = SortingAlgorithms.timSort(reverseSorted, order: .ascending)
+        #expect(result == alreadySorted)
+    }
+    
+    @Test func timSortWithDuplicates() {
+        let result = SortingAlgorithms.timSort(duplicates, order: .ascending)
+        #expect(result == duplicatesSorted)
+    }
+    
+    @Test func timSortLargeArray() {
+        let large = Array((1...100).shuffled())
+        let result = SortingAlgorithms.timSort(large)
+        #expect(result == Array(1...100))
+    }
+    
+    // MARK: - New Algorithms Edge Cases
+    
+    @Test func gnomeSortEmpty() {
+        let empty: [Int] = []
+        let result = SortingAlgorithms.gnomeSort(empty)
+        #expect(result.isEmpty)
+    }
+    
+    @Test func combSortSingleElement() {
+        let single = [42]
+        let result = SortingAlgorithms.combSort(single)
+        #expect(result == single)
+    }
+    
+    @Test func cycleSortTwoElements() {
+        let two = [2, 1]
+        let result = SortingAlgorithms.cycleSort(two)
+        #expect(result == [1, 2])
+    }
+    
+    @Test func timSortAllSame() {
+        let same = [7, 7, 7, 7, 7, 7]
+        let result = SortingAlgorithms.timSort(same)
+        #expect(result == same)
+    }
+    
+    // MARK: - String Sorting with New Algorithms
+    
+    @Test func stringSortingGnome() {
+        let words = ["dog", "cat", "bird", "ant"]
+        let result = SortingAlgorithms.gnomeSort(words, order: .ascending)
+        #expect(result == ["ant", "bird", "cat", "dog"])
+    }
+    
+    @Test func stringSortingComb() {
+        let words = ["zebra", "apple", "mango"]
+        let result = SortingAlgorithms.combSort(words, order: .descending)
+        #expect(result == ["zebra", "mango", "apple"])
+    }
+    
+    @Test func stringSortingCycle() {
+        let words = ["xyz", "abc", "def", "mno"]
+        let result = SortingAlgorithms.cycleSort(words, order: .ascending)
+        #expect(result == ["abc", "def", "mno", "xyz"])
+    }
+    
+    @Test func stringSortingTim() {
+        let words = ["orange", "apple", "banana", "cherry", "date"]
+        let result = SortingAlgorithms.timSort(words, order: .ascending)
+        #expect(result == ["apple", "banana", "cherry", "date", "orange"])
+    }
 }
