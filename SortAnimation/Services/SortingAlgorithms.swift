@@ -8,17 +8,57 @@
 
 import Foundation
 
-/// Direction for sorting
+/// The order in which elements should be sorted.
 enum SortOrder {
+    /// Sort elements from smallest to largest
     case ascending
+    
+    /// Sort elements from largest to smallest
     case descending
 }
 
-/// Pure sorting algorithms that operate on arrays of Comparable elements
+/// Pure sorting algorithm implementations that operate on arrays of comparable elements.
+///
+/// All sorting functions are:
+/// - **Pure**: No side effects, return new sorted arrays
+/// - **Generic**: Work with any `Comparable` type
+/// - **Testable**: No UI dependencies, easy to unit test
+///
+/// ## Topics
+///
+/// ### Comparison Sorts
+/// - ``bubbleSort(_:order:)``
+/// - ``selectionSort(_:order:)``
+/// - ``insertionSort(_:order:)``
+/// - ``quickSort(_:order:)``
+/// - ``mergeSort(_:order:)``
+/// - ``heapSort(_:order:)``
+/// - ``shellSort(_:order:)``
+/// - ``cocktailSort(_:order:)``
+///
+/// ### Non-Comparison Sorts
+/// - ``countingSort(_:order:)``
+/// - ``radixSort(_:order:)``
 struct SortingAlgorithms {
     
     // MARK: - Bubble Sort
     
+    /// Sorts an array using the bubble sort algorithm.
+    ///
+    /// Bubble sort repeatedly steps through the list, compares adjacent elements,
+    /// and swaps them if they're in the wrong order. The pass through the list is repeated
+    /// until the list is sorted.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) worst and average case, O(n) best case (already sorted)
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is stable and adaptive (faster on nearly-sorted data).
     static func bubbleSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -44,6 +84,22 @@ struct SortingAlgorithms {
     
     // MARK: - Selection Sort
     
+    /// Sorts an array using the selection sort algorithm.
+    ///
+    /// Selection sort divides the input into a sorted and an unsorted region.
+    /// It repeatedly selects the smallest (or largest) element from the unsorted region
+    /// and moves it to the end of the sorted region.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) in all cases
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is not stable but performs well with minimal swaps.
     static func selectionSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -72,6 +128,21 @@ struct SortingAlgorithms {
     
     // MARK: - Insertion Sort
     
+    /// Sorts an array using the insertion sort algorithm.
+    ///
+    /// Insertion sort builds the final sorted array one item at a time by repeatedly
+    /// inserting a new element into the sorted portion of the array.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) worst case, O(n) best case (already sorted)
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is stable and efficient for small or nearly-sorted datasets.
     static func insertionSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -102,6 +173,21 @@ struct SortingAlgorithms {
     
     // MARK: - Quick Sort
     
+    /// Sorts an array using the quick sort algorithm.
+    ///
+    /// Quick sort is a divide-and-conquer algorithm that selects a 'pivot' element
+    /// and partitions the array around it, then recursively sorts the sub-arrays.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n log n) average case, O(n²) worst case
+    ///   - Space: O(log n) due to recursion
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This implementation uses the last element as the pivot.
     static func quickSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -140,6 +226,21 @@ struct SortingAlgorithms {
     
     // MARK: - Merge Sort
     
+    /// Sorts an array using the merge sort algorithm.
+    ///
+    /// Merge sort is a divide-and-conquer algorithm that divides the array into halves,
+    /// recursively sorts them, and then merges the sorted halves back together.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n log n) in all cases
+    ///   - Space: O(n) for auxiliary arrays
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is stable and guarantees O(n log n) performance.
     static func mergeSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         
@@ -178,6 +279,21 @@ struct SortingAlgorithms {
     
     // MARK: - Heap Sort
     
+    /// Sorts an array using the heap sort algorithm.
+    ///
+    /// Heap sort builds a binary heap from the input data, then repeatedly extracts
+    /// the maximum element and rebuilds the heap until the array is sorted.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n log n) in all cases
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is not stable but has consistent O(n log n) performance.
     static func heapSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -230,6 +346,22 @@ struct SortingAlgorithms {
     
     // MARK: - Shell Sort
     
+    /// Sorts an array using the shell sort algorithm.
+    ///
+    /// Shell sort is a generalization of insertion sort that allows the exchange of items
+    /// that are far apart. The algorithm uses a sequence of decreasing gap values to sort
+    /// sub-arrays before performing a final insertion sort.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n log n) to O(n²) depending on gap sequence
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This implementation uses a simple gap sequence (n/2, n/4, ..., 1).
     static func shellSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -265,6 +397,21 @@ struct SortingAlgorithms {
     
     // MARK: - Cocktail Shaker Sort
     
+    /// Sorts an array using the cocktail shaker sort algorithm.
+    ///
+    /// Cocktail shaker sort (also known as bidirectional bubble sort) is a variation of
+    /// bubble sort that sorts in both directions on each pass through the list.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n²) worst case, O(n) best case
+    ///   - Space: O(1)
+    ///
+    /// - Parameters:
+    ///   - array: The array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: This algorithm is stable and slightly more efficient than bubble sort on some inputs.
     static func cocktailSort<T: Comparable>(_ array: [T], order: SortOrder = .ascending) -> [T] {
         guard array.count > 1 else { return array }
         var result = array
@@ -312,6 +459,23 @@ struct SortingAlgorithms {
     
     // MARK: - Counting Sort (for integers only)
     
+    /// Sorts an integer array using the counting sort algorithm.
+    ///
+    /// Counting sort is a non-comparison based sorting algorithm that counts the occurrences
+    /// of each distinct element, then uses arithmetic to calculate the position of each element
+    /// in the output sequence.
+    ///
+    /// - Complexity:
+    ///   - Time: O(n + k) where k is the range of input values
+    ///   - Space: O(k) for the counting array
+    ///
+    /// - Parameters:
+    ///   - array: The integer array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: Most efficient when the range of input values is not significantly greater than n.
+    ///         This algorithm is stable.
     static func countingSort(_ array: [Int], order: SortOrder = .ascending) -> [Int] {
         guard array.count > 1 else { return array }
         guard let maxValue = array.max(), let minValue = array.min() else { return array }
@@ -342,6 +506,22 @@ struct SortingAlgorithms {
     
     // MARK: - Radix Sort (for non-negative integers only)
     
+    /// Sorts a non-negative integer array using the radix sort algorithm.
+    ///
+    /// Radix sort is a non-comparison based sorting algorithm that sorts integers by processing
+    /// individual digits. It uses counting sort as a subroutine to sort the array digit by digit.
+    ///
+    /// - Complexity:
+    ///   - Time: O(d × (n + k)) where d is the number of digits and k is the base (10)
+    ///   - Space: O(n + k)
+    ///
+    /// - Parameters:
+    ///   - array: The non-negative integer array to sort
+    ///   - order: The sort direction (ascending or descending)
+    /// - Returns: A new sorted array
+    ///
+    /// - Note: Most efficient for large datasets with a limited number of digits.
+    ///         Requires non-negative integers.
     static func radixSort(_ array: [Int], order: SortOrder = .ascending) -> [Int] {
         guard array.count > 1 else { return array }
         guard let maxValue = array.max(), maxValue >= 0 else { return array }
