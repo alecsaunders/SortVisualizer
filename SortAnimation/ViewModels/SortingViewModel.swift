@@ -38,12 +38,12 @@ class SortingViewModel: ObservableObject {
     private var workingArrayAccessCount: Int = 0
     
     // Color scheme
-    @Published var colorSchemeType: ColorSchemeType = .educational {
+    @Published var colorSchemeType: ColorSchemeType = .vibrant {
         didSet {
             saveColorScheme()
         }
     }
-    @Published var customColors: ColorSchemeColors = .educational {
+    @Published var customColors: ColorSchemeColors = .vibrant {
         didSet {
             saveColorScheme()
         }
@@ -53,8 +53,8 @@ class SortingViewModel: ObservableObject {
         switch colorSchemeType {
         case .classic:
             return .classic
-        case .educational:
-            return .educational
+        case .vibrant:
+            return .vibrant
         case .custom:
             return customColors
         }

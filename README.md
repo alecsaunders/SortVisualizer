@@ -63,7 +63,7 @@ All configuration controls are accessed via the Inspector sidebar (toggle with t
   - Pivot: Green
   - Pointer: Cyan
   - Sorted: White
-- **Educational** - Blue/Red/Green (distinct sorted state)
+- **Vibrant** - Blue/Red/Green (distinct sorted state)
   - Unsorted: Blue
   - Comparing: Red
   - Pivot: Orange

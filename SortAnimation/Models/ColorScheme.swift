@@ -9,7 +9,7 @@ import SwiftUI
 
 enum ColorSchemeType: String, CaseIterable, Identifiable {
     case classic = "Classic"
-    case educational = "Educational"
+    case vibrant = "Vibrant"
     case custom = "Custom"
     
     var id: String { rawValue }
@@ -17,9 +17,9 @@ enum ColorSchemeType: String, CaseIterable, Identifiable {
     var description: String {
         switch self {
         case .classic:
-            return "White/Red/White (Sound of Sorting style)"
-        case .educational:
-            return "Blue/Red/Green (distinct states)"
+            return "(Sound of Sorting style)"
+        case .vibrant:
+            return "Vibrant colors"
         case .custom:
             return "Choose your own colors"
         }
@@ -41,11 +41,11 @@ struct ColorSchemeColors: Equatable, Codable {
         sorted: CodableColor(.white)
     )
     
-    static let educational = ColorSchemeColors(
+    static let vibrant = ColorSchemeColors(
         unsorted: CodableColor(.blue),
         comparing: CodableColor(.red),
-        pivot: CodableColor(Color(red: 1.0, green: 0.6, blue: 0.0)), // Orange (vibrant, educational)
-        pointer: CodableColor(Color(red: 0.7, green: 0.3, blue: 0.9)), // Purple (distinct, educational)
+        pivot: CodableColor(Color(red: 1.0, green: 0.6, blue: 0.0)), // Orange
+        pointer: CodableColor(Color(red: 0.7, green: 0.3, blue: 0.9)), // Purple
         sorted: CodableColor(.green)
     )
     

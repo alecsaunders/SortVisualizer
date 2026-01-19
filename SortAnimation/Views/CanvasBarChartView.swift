@@ -67,7 +67,7 @@ struct CanvasBarChartView: View {
             Bar(value: 15, state: .unsorted)
         ],
         maxValue: 20,
-        colors: .educational
+        colors: .vibrant
     )
     .frame(height: 300)
     .padding()

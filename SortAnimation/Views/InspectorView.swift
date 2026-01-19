@@ -90,14 +90,13 @@ struct InspectorView: View {
                                     viewModel.colorSchemeType = schemeType
                                 }
                                 
+                                if schemeType == .classic {
+                                    Text(schemeType.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
                                 Spacer()
-                            }
-                            
-                            if schemeType != .custom {
-                                Text(schemeType.description)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.leading, 24)
                             }
                         }
                     }
@@ -152,21 +151,27 @@ struct InspectorView: View {
                     
                     // Preview
                     Divider()
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 0)
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Preview")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         
-                        HStack(spacing: 4) {
-                            PreviewBar(color: viewModel.currentColors.unsorted.color, label: "Unsorted")
-                            PreviewBar(color: viewModel.currentColors.comparing.color, label: "Comparing")
-                            PreviewBar(color: viewModel.currentColors.pivot.color, label: "Pivot")
-                            PreviewBar(color: viewModel.currentColors.pointer.color, label: "Pointer")
-                            PreviewBar(color: viewModel.currentColors.sorted.color, label: "Sorted")
+                        VStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                PreviewBar(color: viewModel.currentColors.unsorted.color, label: "Unsorted")
+                                PreviewBar(color: viewModel.currentColors.comparing.color, label: "Comparing")
+                                PreviewBar(color: viewModel.currentColors.sorted.color, label: "Sorted")
+                            }
+                            
+                            HStack(spacing: 6) {
+                                PreviewBar(color: viewModel.currentColors.pivot.color, label: "Pivot")
+                                PreviewBar(color: viewModel.currentColors.pointer.color, label: "Pointer")
+                            }
                         }
-                        .frame(height: 80)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 120)
                     }
                 }
                 
@@ -279,11 +284,14 @@ struct PreviewBar: View {
     
     var body: some View {
         VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: 3)
                 .fill(color)
+                .frame(width: 60, height: 40)
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
         }
     }
 }
