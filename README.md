@@ -196,6 +196,20 @@ open SortAnimation.xcodeproj
 ### Custom
 - Choose any color for each state using the color pickers in the Inspector
 
+## Testing
+
+The project includes comprehensive test coverage:
+
+- **Unit Tests** (`SortingAlgorithmsUnitTests`) - 80+ pure tests for sorting algorithm correctness
+- **Integration Tests** (`SortingViewModelIntegrationTests`) - 30+ tests for ViewModel behavior
+- **UI Tests** (`SortAnimationUITests`) - End-to-end app testing
+
+Run tests in Xcode with **⌘U** or via command line:
+
+```bash
+xcodebuild test -scheme SortAnimation -destination 'platform=macOS'
+```
+
 ## Future Enhancements
 
 - [ ] Add more algorithms (Tim Sort, Bitonic Sort)
