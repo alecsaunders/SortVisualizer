@@ -1,4 +1,4 @@
-# SortAnimation
+# Sort Visualizer
 
 A high-performance macOS app built with SwiftUI that visualizes sorting algorithms with beautiful, smooth animations.
 
