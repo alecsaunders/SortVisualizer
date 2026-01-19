@@ -12,14 +12,42 @@ struct ContentView: View {
     @State private var showingAlgorithmInfo = false
     @State private var showInspector = false
     
+    private var statisticsText: String {
+        let parts = [
+            "\(viewModel.comparisonCount) comparisons",
+            "\(viewModel.arrayAccessCount) array accesses",
+            String(format: "%.0f ms delay", viewModel.elapsedTime * 1000)
+        ]
+        return parts.joined(separator: ", ")
+    }
+    
     var body: some View {
-        // Bar chart visualization
-        CanvasBarChartView(
-            bars: viewModel.bars,
-            maxValue: viewModel.numberOfElements,
-            colors: viewModel.currentColors
-        )
-        .padding(20)
+        ZStack(alignment: .top) {
+            // Bar chart visualization
+            CanvasBarChartView(
+                bars: viewModel.bars,
+                maxValue: viewModel.numberOfElements,
+                colors: viewModel.currentColors
+            )
+            .padding(20)
+            
+            // Statistics overlay (top-left corner like Sound of Sorting)
+            if viewModel.isSorting || viewModel.comparisonCount > 0 {
+                HStack {
+                    Text(statisticsText)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(6)
+                        .padding(.leading, 20)
+                        .padding(.top, 20)
+                    
+                    Spacer()
+                }
+            }
+        }
         .frame(minWidth: 800, minHeight: 500)
         .inspector(isPresented: $showInspector) {
             InspectorView(viewModel: viewModel)

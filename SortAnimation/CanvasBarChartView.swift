@@ -17,11 +17,15 @@ struct CanvasBarChartView: View {
             let barCount = bars.count
             guard barCount > 0 else { return }
             
+            // Reserve space at top for statistics overlay (40px)
+            let topMargin: CGFloat = 40
+            let availableHeight = size.height - topMargin
+            
             // Calculate dimensions
             let spacing: CGFloat = max(1, min(4, size.width / CGFloat(barCount) / 10))
             let totalSpacing = spacing * CGFloat(barCount - 1)
             let barWidth = (size.width - totalSpacing) / CGFloat(barCount)
-            let maxHeight = size.height
+            let maxHeight = availableHeight
             
             // Draw each bar
             for (index, bar) in bars.enumerated() {
