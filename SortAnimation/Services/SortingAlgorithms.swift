@@ -714,7 +714,8 @@ struct SortingAlgorithms {
             }
             
             // Rotate rest of the cycle
-            while pos != cycleStart {
+            var currentPos = pos
+            while currentPos != cycleStart {
                 pos = cycleStart
                 
                 // Find position where we put the element
@@ -729,14 +730,16 @@ struct SortingAlgorithms {
                 }
                 
                 // Skip duplicates
-                while item == result[pos] {
+                while pos < n && item == result[pos] {
                     pos += 1
                 }
                 
                 // Put the item to its right position
-                if item != result[pos] {
+                if pos < n && item != result[pos] {
                     swap(&item, &result[pos])
                 }
+                
+                currentPos = pos
             }
         }
         

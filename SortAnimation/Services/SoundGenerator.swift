@@ -46,9 +46,9 @@ class SoundGenerator: ObservableObject {
     private var activeNodeCount = 0
     private var isEngineSetup = false
     
-    /// Sound parameters matching Sound of Sorting frequency range
-    private let minFrequency: Double = 120.0  // Hz (low note)
-    private let maxFrequency: Double = 1212.0 // Hz (high note)
+    /// Sound parameters with adjusted frequency range for better audibility
+    private let minFrequency: Double = 220.0  // Hz (low note - A3)
+    private let maxFrequency: Double = 1760.0 // Hz (high note - A6)
     
     init() {
         // Audio engine is setup lazily when first needed for better performance
@@ -104,8 +104,8 @@ class SoundGenerator: ObservableObject {
     
     /// Converts an integer value to an audio frequency.
     ///
-    /// Maps values linearly from [1, maxValue] to [120 Hz, 1212 Hz], matching
-    /// the frequency range used in "The Sound of Sorting".
+    /// Maps values linearly from [1, maxValue] to [220 Hz, 1760 Hz], providing
+    /// a pleasant musical range spanning three octaves (A3 to A6).
     ///
     /// - Parameters:
     ///   - value: The value to convert (1 to maxValue)
