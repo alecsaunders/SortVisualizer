@@ -24,7 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D1215A0D2F1C5F6200E3A97F /* SortAnimation.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SortAnimation.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1215A0D2F1C5F6200E3A97F /* SortAnimation.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = SortAnimation.app; path = "Sort Visualizer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1215A1A2F1C5F6300E3A97F /* SortAnimationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SortAnimationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1215A242F1C5F6300E3A97F /* SortAnimationUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SortAnimationUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -412,6 +412,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_DISPLAY_NAME = "Sort Visualizer";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alec-saunders.SortAnimation";
+				PRODUCT_MODULE_NAME = SortAnimation;
 				PRODUCT_NAME = "Sort Visualizer";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -446,6 +447,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_DISPLAY_NAME = "Sort Visualizer";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alec-saunders.SortAnimation";
+				PRODUCT_MODULE_NAME = SortAnimation;
 				PRODUCT_NAME = "Sort Visualizer";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -474,7 +476,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SortAnimation.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SortAnimation";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sort Visualizer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Sort Visualizer";
 			};
 			name = Debug;
 		};
@@ -495,7 +497,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SortAnimation.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SortAnimation";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sort Visualizer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Sort Visualizer";
 			};
 			name = Release;
 		};
