@@ -58,9 +58,26 @@ All configuration controls are accessed via the Inspector sidebar (toggle with t
 
 #### Color Scheme
 - **Classic** - White/Red/White (Sound of Sorting style)
+  - Unsorted: White
+  - Comparing: Red
+  - Pivot: Green
+  - Pointer: Cyan
+  - Sorted: White
 - **Educational** - Blue/Red/Green (distinct sorted state)
+  - Unsorted: Blue
+  - Comparing: Red
+  - Pivot: Orange
+  - Pointer: Purple
+  - Sorted: Green
 - **Custom** - Choose your own colors for each state
 - **Live Preview** - See color changes in real-time
+
+**Bar States:**
+- **Unsorted** - Elements not yet processed
+- **Comparing** - Elements currently being compared
+- **Pivot** - Pivot element in Quick Sort
+- **Pointer** - Algorithm pointers or indices
+- **Sorted** - Elements confirmed in final position
 
 #### Sound
 - **Enable/Disable** - Toggle sound effects on/off
@@ -180,21 +197,6 @@ open SortAnimation.xcodeproj
 | Radix Sort | O(d × n) | O(n + k) | ✅ | ❌ |
 
 *Shell Sort complexity depends on gap sequence
-
-## Color Schemes
-
-### Classic (Sound of Sorting)
-- ⚪ **White** - Unsorted elements
-- 🔴 **Red** - Elements being compared or moved
-- ⚪ **White** - Sorted elements (returns to unsorted color)
-
-### Educational (Default)
-- 🔵 **Blue** - Unsorted elements
-- 🔴 **Red** - Elements being compared or moved
-- 🟢 **Green** - Sorted elements in final position
-
-### Custom
-- Choose any color for each state using the color pickers in the Inspector
 
 ## Testing
 
