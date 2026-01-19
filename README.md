@@ -17,6 +17,7 @@ A high-performance macOS app built with SwiftUI that visualizes sorting algorith
 - 👁️ **Step-by-Step Mode** - Pause, play, and step through algorithms
 - 🎨 **Inspector Sidebar** - All controls in one convenient panel
 - 📊 **Scalable** - From 10 to 200 elements
+- 📈 **Live Statistics** - Real-time tracking of comparisons, swaps, and performance
 
 ## Supported Algorithms
 
@@ -64,6 +65,12 @@ All configuration controls are accessed via the Inspector sidebar (toggle with t
 - **Enable/Disable** - Toggle sound effects on/off
 - **Volume** - Adjust sound volume (0-100%)
 - **Sustain** - Control envelope duration
+
+#### Statistics
+- **Comparisons** - Number of element comparisons made
+- **Swaps** - Number of element swaps performed
+- **Array Access** - Total array read/write operations
+- **Time** - Elapsed time in seconds
 
 ## Technical Details
 
@@ -185,7 +192,6 @@ open SortAnimation.xcodeproj
 ## Future Enhancements
 
 - [ ] Add more algorithms (Tim Sort, Bitonic Sort)
-- [ ] Algorithm complexity visualization
 - [ ] Export animation as video
 - [ ] Comparison mode (run multiple algorithms side-by-side)
 
