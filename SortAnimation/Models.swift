@@ -49,9 +49,8 @@ struct Bar: Identifiable, Equatable {
     }
     
     static func == (lhs: Bar, rhs: Bar) -> Bool {
-        lhs.id == rhs.id && 
-        lhs.value == rhs.value && 
-        lhs.state == rhs.state && 
-        lhs.offset == rhs.offset
+        // Optimize: Only compare ID since each Bar has unique UUID
+        // SwiftUI uses this for diffing - comparing all fields is expensive
+        lhs.id == rhs.id
     }
 }

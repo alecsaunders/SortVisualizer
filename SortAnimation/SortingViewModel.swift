@@ -19,6 +19,11 @@ class SortingViewModel: ObservableObject {
     @Published var isSorting: Bool = false
     @Published var isPaused: Bool = false
     
+    // Performance optimization: working copy for frequent mutations
+    private var workingBars: [Bar] = []
+    private var lastPublishTime = Date()
+    private let publishInterval: TimeInterval = 1.0 / 60.0 // 60fps
+    
     // Color scheme
     @Published var colorSchemeType: ColorSchemeType = .educational {
         didSet {
@@ -83,6 +88,10 @@ class SortingViewModel: ObservableObject {
         bars.removeAll(keepingCapacity: true) // Keep capacity for reuse
         bars.reserveCapacity(numberOfElements) // Ensure capacity
         bars = values.map { Bar(value: $0, state: .unsorted) }
+        
+        // Initialize working copy
+        workingBars = bars
+        lastPublishTime = Date()
     }
     
     func togglePause() {
@@ -110,6 +119,8 @@ class SortingViewModel: ObservableObject {
         guard !isSorting else { return }
         
         isSorting = true
+        workingBars = bars // Initialize working copy
+        lastPublishTime = Date()
         
         sortTask = Task {
             switch selectedAlgorithm {
@@ -137,16 +148,35 @@ class SortingViewModel: ObservableObject {
             
             if !Task.isCancelled {
                 // Mark all as sorted
-                for index in bars.indices {
-                    bars[index].state = .sorted
+                for index in workingBars.indices {
+                    workingBars[index].state = .sorted
                 }
+                // Force final publish
+                publishNow()
                 isSorting = false
             }
         }
     }
     
+    // MARK: - Performance Optimization
+    
+    /// Throttled publish: only update UI at 60fps to reduce SwiftUI overhead
+    private func publishIfNeeded() {
+        let now = Date()
+        if now.timeIntervalSince(lastPublishTime) >= publishInterval {
+            bars = workingBars
+            lastPublishTime = now
+        }
+    }
+    
+    /// Force immediate publish (used for final state)
+    private func publishNow() {
+        bars = workingBars
+        lastPublishTime = Date()
+    }
+    
     private func bubbleSort() async {
-        let n = bars.count
+        let n = workingBars.count
         
         for i in 0..<n {
             guard !Task.isCancelled else { break }
@@ -156,30 +186,33 @@ class SortingViewModel: ObservableObject {
                 guard !Task.isCancelled else { break }
                 
                 // Mark bars being compared
-                bars[j].state = .comparing
-                bars[j + 1].state = .comparing
+                workingBars[j].state = .comparing
+                workingBars[j + 1].state = .comparing
+                publishIfNeeded()
                 
                 // Play comparison sound
-                playComparisonSound(value1: bars[j].value, value2: bars[j + 1].value)
+                playComparisonSound(value1: workingBars[j].value, value2: workingBars[j + 1].value)
                 
-                if shouldSwap(bars[j].value, bars[j + 1].value) {
+                if shouldSwap(workingBars[j].value, workingBars[j + 1].value) {
                     // Perform swap with animation
                     await swapBars(at: j, and: j + 1)
                     swapped = true
                 }
                 
                 // Reset state after comparison
-                if bars[j].state == .comparing {
-                    bars[j].state = .unsorted
+                if workingBars[j].state == .comparing {
+                    workingBars[j].state = .unsorted
                 }
-                if bars[j + 1].state == .comparing {
-                    bars[j + 1].state = .unsorted
+                if workingBars[j + 1].state == .comparing {
+                    workingBars[j + 1].state = .unsorted
                 }
+                publishIfNeeded()
             }
             
             // Mark the last element of this pass as sorted
             if i < n {
-                bars[n - i - 1].state = .sorted
+                workingBars[n - i - 1].state = .sorted
+                publishIfNeeded()
             }
             
             if !swapped {
@@ -189,89 +222,99 @@ class SortingViewModel: ObservableObject {
     }
     
     private func selectionSort() async {
-        let n = bars.count
+        let n = workingBars.count
         
         for i in 0..<n {
             guard !Task.isCancelled else { break }
             
             var targetIndex = i
-            bars[targetIndex].state = .comparing
+            workingBars[targetIndex].state = .comparing
+            publishIfNeeded()
             
             for j in (i + 1)..<n {
                 guard !Task.isCancelled else { break }
                 
-                bars[j].state = .comparing
+                workingBars[j].state = .comparing
+                publishIfNeeded()
                 
                 // Small delay to visualize comparison
                 await delay(Int(speed / 2))
                 
                 // Play comparison sound
-                playComparisonSound(value1: bars[j].value, value2: bars[targetIndex].value)
+                playComparisonSound(value1: workingBars[j].value, value2: workingBars[targetIndex].value)
                 
                 // For ascending: find minimum; for descending: find maximum
                 let shouldUpdate = sortDirection == .ascending ? 
-                    bars[j].value < bars[targetIndex].value : 
-                    bars[j].value > bars[targetIndex].value
+                    workingBars[j].value < workingBars[targetIndex].value : 
+                    workingBars[j].value > workingBars[targetIndex].value
                 
                 if shouldUpdate {
                     // Reset previous target
-                    if bars[targetIndex].state == .comparing {
-                        bars[targetIndex].state = .unsorted
+                    if workingBars[targetIndex].state == .comparing {
+                        workingBars[targetIndex].state = .unsorted
                     }
                     targetIndex = j
-                    bars[targetIndex].state = .comparing
+                    workingBars[targetIndex].state = .comparing
                 } else {
                     // Reset if not the target
-                    if bars[j].state == .comparing && j != targetIndex {
-                        bars[j].state = .unsorted
+                    if workingBars[j].state == .comparing && j != targetIndex {
+                        workingBars[j].state = .unsorted
                     }
                 }
+                publishIfNeeded()
             }
             
             if targetIndex != i {
                 await swapBars(at: i, and: targetIndex)
             } else {
                 // No swap needed, just mark as sorted
-                bars[i].state = .sorted
+                workingBars[i].state = .sorted
             }
             
             // Mark the position as sorted
-            bars[i].state = .sorted
+            workingBars[i].state = .sorted
+            publishIfNeeded()
         }
     }
     
     @MainActor
     private func swapBars(at index1: Int, and index2: Int) async {
         guard index1 != index2, index1 >= 0, index2 >= 0, 
-              index1 < bars.count, index2 < bars.count else { return }
+              index1 < workingBars.count, index2 < workingBars.count else { return }
         
         // Calculate the distance between bars
         let distance = CGFloat(abs(index2 - index1))
         
         // Set offsets for animation
         if index1 < index2 {
-            bars[index1].offset = distance
-            bars[index2].offset = -distance
+            workingBars[index1].offset = distance
+            workingBars[index2].offset = -distance
         } else {
-            bars[index1].offset = -distance
-            bars[index2].offset = distance
+            workingBars[index1].offset = -distance
+            workingBars[index2].offset = distance
         }
+        
+        // Publish for visual animation
+        publishIfNeeded()
         
         // Animate the swap
         withAnimation(.linear(duration: speed / 1000.0)) {
-            bars[index1].offset = bars[index1].offset
-            bars[index2].offset = bars[index2].offset
+            workingBars[index1].offset = workingBars[index1].offset
+            workingBars[index2].offset = workingBars[index2].offset
         }
         
         // Wait for animation plus speed delay
         await delay(Int(speed))
         
         // Actually swap the bars
-        bars.swapAt(index1, index2)
+        workingBars.swapAt(index1, index2)
         
         // Reset offsets
-        bars[index1].offset = 0
-        bars[index2].offset = 0
+        workingBars[index1].offset = 0
+        workingBars[index2].offset = 0
+        
+        // Publish after swap
+        publishIfNeeded()
     }
     
     private func waitForStep() async {
@@ -308,43 +351,47 @@ class SortingViewModel: ObservableObject {
     }
     
     private func insertionSort() async {
-        let n = bars.count
+        let n = workingBars.count
         
         for i in 1..<n {
             guard !Task.isCancelled else { break }
             
-            let key = bars[i]
-            bars[i].state = .comparing
+            let key = workingBars[i]
+            workingBars[i].state = .comparing
+            publishIfNeeded()
             var j = i - 1
             
             // Find the correct position for the key
-            while j >= 0 && shouldSwap(bars[j].value, key.value) {
+            while j >= 0 && shouldSwap(workingBars[j].value, key.value) {
                 guard !Task.isCancelled else { break }
                 
-                bars[j].state = .comparing
-                bars[j + 1].state = .comparing
+                workingBars[j].state = .comparing
+                workingBars[j + 1].state = .comparing
+                publishIfNeeded()
                 
                 // Play comparison sound
-                playComparisonSound(value1: bars[j].value, value2: key.value)
+                playComparisonSound(value1: workingBars[j].value, value2: key.value)
                 
                 // Shift element to the right
                 await swapBars(at: j, and: j + 1)
                 
-                bars[j + 1].state = .unsorted
+                workingBars[j + 1].state = .unsorted
+                publishIfNeeded()
                 j -= 1
             }
             
             // Mark elements before current position as sorted
             for k in 0...i {
-                if bars[k].state != .comparing {
-                    bars[k].state = .unsorted
+                if workingBars[k].state != .comparing {
+                    workingBars[k].state = .unsorted
                 }
             }
+            publishIfNeeded()
         }
     }
     
     private func mergeSort() async {
-        await mergeSortHelper(start: 0, end: bars.count - 1)
+        await mergeSortHelper(start: 0, end: workingBars.count - 1)
     }
     
     private func mergeSortHelper(start: Int, end: Int) async {
@@ -366,8 +413,8 @@ class SortingViewModel: ObservableObject {
         guard !Task.isCancelled else { return }
         
         // Create copies of the subarrays
-        let leftArray = Array(bars[start...mid])
-        let rightArray = Array(bars[(mid + 1)...end])
+        let leftArray = Array(workingBars[start...mid])
+        let rightArray = Array(workingBars[(mid + 1)...end])
         
         var i = 0
         var j = 0
@@ -386,26 +433,30 @@ class SortingViewModel: ObservableObject {
                 leftArray[i].value >= rightArray[j].value
             
             if shouldPickLeft {
-                bars[k] = leftArray[i]
+                workingBars[k] = leftArray[i]
                 i += 1
             } else {
-                bars[k] = rightArray[j]
+                workingBars[k] = rightArray[j]
                 j += 1
             }
             
-            bars[k].state = .comparing
+            workingBars[k].state = .comparing
+            publishIfNeeded()
             try? await Task.sleep(for: .milliseconds(Int(speed)))
-            bars[k].state = .unsorted
+            workingBars[k].state = .unsorted
+            publishIfNeeded()
             k += 1
         }
         
         // Copy remaining elements from left array
         while i < leftArray.count {
             guard !Task.isCancelled else { break }
-            bars[k] = leftArray[i]
-            bars[k].state = .comparing
+            workingBars[k] = leftArray[i]
+            workingBars[k].state = .comparing
+            publishIfNeeded()
             await delay(Int(speed))
-            bars[k].state = .unsorted
+            workingBars[k].state = .unsorted
+            publishIfNeeded()
             i += 1
             k += 1
         }
@@ -413,10 +464,12 @@ class SortingViewModel: ObservableObject {
         // Copy remaining elements from right array
         while j < rightArray.count {
             guard !Task.isCancelled else { break }
-            bars[k] = rightArray[j]
-            bars[k].state = .comparing
+            workingBars[k] = rightArray[j]
+            workingBars[k].state = .comparing
+            publishIfNeeded()
             await delay(Int(speed))
-            bars[k].state = .unsorted
+            workingBars[k].state = .unsorted
+            publishIfNeeded()
             j += 1
             k += 1
         }
@@ -425,7 +478,7 @@ class SortingViewModel: ObservableObject {
     private func radixSort() async {
         guard !Task.isCancelled else { return }
         
-        let maxValue = bars.max(by: { $0.value < $1.value })?.value ?? 0
+        let maxValue = workingBars.max(by: { $0.value < $1.value })?.value ?? 0
         var exp = 1
         
         while maxValue / exp > 0 {
@@ -436,13 +489,15 @@ class SortingViewModel: ObservableObject {
         
         // If descending, reverse the final result
         if sortDirection == .descending {
-            bars = bars.reversed()
+            workingBars = workingBars.reversed()
             // Animate the reversed result
-            for i in 0..<bars.count {
+            for i in 0..<workingBars.count {
                 guard !Task.isCancelled else { break }
-                bars[i].state = .comparing
+                workingBars[i].state = .comparing
+                publishIfNeeded()
                 await delay(Int(speed))
-                bars[i].state = .unsorted
+                workingBars[i].state = .unsorted
+                publishIfNeeded()
             }
         }
     }
@@ -450,7 +505,7 @@ class SortingViewModel: ObservableObject {
     private func countingSort(exp: Int) async {
         guard !Task.isCancelled else { return }
         
-        let n = bars.count
+        let n = workingBars.count
         var output = [Bar]()
         output.reserveCapacity(n)
         output.append(contentsOf: repeatElement(Bar(value: 0), count: n))
@@ -458,13 +513,14 @@ class SortingViewModel: ObservableObject {
         
         // Mark all bars as comparing during counting phase
         for i in 0..<n {
-            bars[i].state = .comparing
+            workingBars[i].state = .comparing
         }
+        publishIfNeeded()
         await delay(Int(speed / 2))
         
         // Store count of occurrences
         for i in 0..<n {
-            let digit = (bars[i].value / exp) % 10
+            let digit = (workingBars[i].value / exp) % 10
             count[digit] += 1
         }
         
@@ -477,27 +533,30 @@ class SortingViewModel: ObservableObject {
         for i in stride(from: n - 1, through: 0, by: -1) {
             guard !Task.isCancelled else { break }
             
-            let digit = (bars[i].value / exp) % 10
-            output[count[digit] - 1] = bars[i]
+            let digit = (workingBars[i].value / exp) % 10
+            output[count[digit] - 1] = workingBars[i]
             count[digit] -= 1
         }
         
         // Replace bars array with sorted output
-        bars = output
+        workingBars = output
+        publishNow()
         
         // Animate showing the result
         for i in 0..<n {
             guard !Task.isCancelled else { break }
-            bars[i].state = .comparing
+            workingBars[i].state = .comparing
+            publishIfNeeded()
             await delay(Int(speed))
-            bars[i].state = .unsorted
+            workingBars[i].state = .unsorted
+            publishIfNeeded()
         }
     }
     
     // MARK: - Quick Sort
     
     private func quickSort() async {
-        await quickSortHelper(low: 0, high: bars.count - 1)
+        await quickSortHelper(low: 0, high: workingBars.count - 1)
     }
     
     private func quickSortHelper(low: Int, high: Int) async {
@@ -512,34 +571,36 @@ class SortingViewModel: ObservableObject {
     private func partition(low: Int, high: Int) async -> Int {
         guard !Task.isCancelled else { return low }
         
-        let pivot = bars[high]
-        bars[high].state = .pivot  // Mark pivot with green
+        let pivot = workingBars[high]
+        workingBars[high].state = .pivot  // Mark pivot with green
+        publishIfNeeded()
         var i = low - 1
         
         for j in low..<high {
             guard !Task.isCancelled else { break }
             
-            bars[j].state = .comparing
+            workingBars[j].state = .comparing
             
             // Show partition boundary pointer if valid
             if i >= low {
-                bars[i].state = .pointer
+                workingBars[i].state = .pointer
             }
+            publishIfNeeded()
             
             await delay(Int(speed / 2))
             
             // Play comparison sound
-            playComparisonSound(value1: bars[j].value, value2: pivot.value)
+            playComparisonSound(value1: workingBars[j].value, value2: pivot.value)
             
             // For ascending: elements < pivot go left; for descending: elements > pivot go left
             let shouldSwapToLeft = sortDirection == .ascending ?
-                bars[j].value < pivot.value :
-                bars[j].value > pivot.value
+                workingBars[j].value < pivot.value :
+                workingBars[j].value > pivot.value
             
             if shouldSwapToLeft {
                 // Reset previous pointer
-                if i >= low && bars[i].state == .pointer {
-                    bars[i].state = .unsorted
+                if i >= low && workingBars[i].state == .pointer {
+                    workingBars[i].state = .unsorted
                 }
                 
                 i += 1
@@ -549,20 +610,23 @@ class SortingViewModel: ObservableObject {
             }
             
             // Clear pointer state
-            if i >= low && bars[i].state == .pointer {
-                bars[i].state = .unsorted
+            if i >= low && workingBars[i].state == .pointer {
+                workingBars[i].state = .unsorted
             }
             
-            if bars[j].state == .comparing {
-                bars[j].state = .unsorted
+            if workingBars[j].state == .comparing {
+                workingBars[j].state = .unsorted
             }
+            publishIfNeeded()
         }
         
         // Reset pivot state before swap
-        bars[high].state = .unsorted
+        workingBars[high].state = .unsorted
+        publishIfNeeded()
         
         await swapBars(at: i + 1, and: high)
-        bars[i + 1].state = .sorted
+        workingBars[i + 1].state = .sorted
+        publishIfNeeded()
         
         return i + 1
     }
@@ -570,7 +634,7 @@ class SortingViewModel: ObservableObject {
     // MARK: - Heap Sort
     
     private func heapSort() async {
-        let n = bars.count
+        let n = workingBars.count
         
         // Build max heap
         for i in stride(from: n / 2 - 1, through: 0, by: -1) {
@@ -582,17 +646,20 @@ class SortingViewModel: ObservableObject {
         for i in stride(from: n - 1, through: 1, by: -1) {
             guard !Task.isCancelled else { break }
             
-            bars[0].state = .comparing
-            bars[i].state = .comparing
+            workingBars[0].state = .comparing
+            workingBars[i].state = .comparing
+            publishIfNeeded()
             
             await swapBars(at: 0, and: i)
-            bars[i].state = .sorted
+            workingBars[i].state = .sorted
+            publishIfNeeded()
             
             await heapify(n: i, root: 0)
         }
         
         if !Task.isCancelled && n > 0 {
-            bars[0].state = .sorted
+            workingBars[0].state = .sorted
+            publishIfNeeded()
         }
     }
     
@@ -604,47 +671,53 @@ class SortingViewModel: ObservableObject {
         let right = 2 * root + 2
         
         if left < n {
-            bars[left].state = .comparing
+            workingBars[left].state = .comparing
+            publishIfNeeded()
             await delay(Int(speed / 2))
             
             // Play comparison sound
-            playComparisonSound(value1: bars[left].value, value2: bars[target].value)
+            playComparisonSound(value1: workingBars[left].value, value2: workingBars[target].value)
             
             // For ascending: build max heap; for descending: build min heap
             let shouldUpdate = sortDirection == .ascending ?
-                bars[left].value > bars[target].value :
-                bars[left].value < bars[target].value
+                workingBars[left].value > workingBars[target].value :
+                workingBars[left].value < workingBars[target].value
             
             if shouldUpdate {
                 target = left
             }
-            bars[left].state = .unsorted
+            workingBars[left].state = .unsorted
+            publishIfNeeded()
         }
         
         if right < n {
-            bars[right].state = .comparing
+            workingBars[right].state = .comparing
+            publishIfNeeded()
             await delay(Int(speed / 2))
             
             // Play comparison sound
-            playComparisonSound(value1: bars[right].value, value2: bars[target].value)
+            playComparisonSound(value1: workingBars[right].value, value2: workingBars[target].value)
             
             // For ascending: build max heap; for descending: build min heap
             let shouldUpdate = sortDirection == .ascending ?
-                bars[right].value > bars[target].value :
-                bars[right].value < bars[target].value
+                workingBars[right].value > workingBars[target].value :
+                workingBars[right].value < workingBars[target].value
             
             if shouldUpdate {
                 target = right
             }
-            bars[right].state = .unsorted
+            workingBars[right].state = .unsorted
+            publishIfNeeded()
         }
         
         if target != root {
-            bars[root].state = .comparing
-            bars[target].state = .comparing
+            workingBars[root].state = .comparing
+            workingBars[target].state = .comparing
+            publishIfNeeded()
             await swapBars(at: root, and: target)
-            bars[root].state = .unsorted
-            bars[target].state = .unsorted
+            workingBars[root].state = .unsorted
+            workingBars[target].state = .unsorted
+            publishIfNeeded()
             
             await heapify(n: n, root: target)
         }
@@ -653,7 +726,7 @@ class SortingViewModel: ObservableObject {
     // MARK: - Shell Sort
     
     private func shellSort() async {
-        let n = bars.count
+        let n = workingBars.count
         var gap = n / 2
         
         while gap > 0 {
@@ -662,26 +735,30 @@ class SortingViewModel: ObservableObject {
             for i in gap..<n {
                 guard !Task.isCancelled else { break }
                 
-                let temp = bars[i]
-                bars[i].state = .comparing
+                let temp = workingBars[i]
+                workingBars[i].state = .comparing
+                publishIfNeeded()
                 var j = i
                 
-                while j >= gap && shouldSwap(bars[j - gap].value, temp.value) {
+                while j >= gap && shouldSwap(workingBars[j - gap].value, temp.value) {
                     guard !Task.isCancelled else { break }
                     
-                    bars[j - gap].state = .comparing
-                    bars[j].state = .comparing
+                    workingBars[j - gap].state = .comparing
+                    workingBars[j].state = .comparing
+                    publishIfNeeded()
                     
                     // Play comparison sound
-                    playComparisonSound(value1: bars[j - gap].value, value2: temp.value)
+                    playComparisonSound(value1: workingBars[j - gap].value, value2: temp.value)
                     
                     await swapBars(at: j, and: j - gap)
                     
-                    bars[j].state = .unsorted
+                    workingBars[j].state = .unsorted
+                    publishIfNeeded()
                     j -= gap
                 }
                 
-                bars[j].state = .unsorted
+                workingBars[j].state = .unsorted
+                publishIfNeeded()
             }
             
             gap /= 2
@@ -693,9 +770,9 @@ class SortingViewModel: ObservableObject {
     private func countingSort() async {
         guard !Task.isCancelled else { return }
         
-        let n = bars.count
-        let maxValue = bars.max(by: { $0.value < $1.value })?.value ?? 0
-        let minValue = bars.min(by: { $0.value < $1.value })?.value ?? 0
+        let n = workingBars.count
+        let maxValue = workingBars.max(by: { $0.value < $1.value })?.value ?? 0
+        let minValue = workingBars.min(by: { $0.value < $1.value })?.value ?? 0
         let range = maxValue - minValue + 1
         
         var count = Array(repeating: 0, count: range)
@@ -703,13 +780,14 @@ class SortingViewModel: ObservableObject {
         // Store count of each element and mark as comparing
         for i in 0..<n {
             guard !Task.isCancelled else { break }
-            bars[i].state = .comparing
-            count[bars[i].value - minValue] += 1
+            workingBars[i].state = .comparing
+            count[workingBars[i].value - minValue] += 1
+            publishIfNeeded()
             await delay(Int(speed / 2))
         }
         
         // Build the sorted output array
-        let originalBars = bars
+        let originalBars = workingBars
         
         // Calculate cumulative count
         for i in 1..<range {
@@ -730,15 +808,18 @@ class SortingViewModel: ObservableObject {
         }
         
         // Now replace entire array and animate the result
-        bars = sortDirection == .ascending ? output : output.reversed()
+        workingBars = sortDirection == .ascending ? output : output.reversed()
+        publishNow()
         
         // Animate through showing each bar in its sorted position
         for i in 0..<n {
             guard !Task.isCancelled else { break }
             
-            bars[i].state = .comparing
+            workingBars[i].state = .comparing
+            publishIfNeeded()
             await delay(Int(speed))
-            bars[i].state = .unsorted
+            workingBars[i].state = .unsorted
+            publishIfNeeded()
         }
     }
     
@@ -747,7 +828,7 @@ class SortingViewModel: ObservableObject {
     private func cocktailSort() async {
         var swapped = true
         var start = 0
-        var end = bars.count - 1
+        var end = workingBars.count - 1
         
         while swapped {
             guard !Task.isCancelled else { break }
@@ -758,26 +839,29 @@ class SortingViewModel: ObservableObject {
             for i in start..<end {
                 guard !Task.isCancelled else { break }
                 
-                bars[i].state = .comparing
-                bars[i + 1].state = .comparing
+                workingBars[i].state = .comparing
+                workingBars[i + 1].state = .comparing
+                publishIfNeeded()
                 
                 // Play comparison sound
-                playComparisonSound(value1: bars[i].value, value2: bars[i + 1].value)
+                playComparisonSound(value1: workingBars[i].value, value2: workingBars[i + 1].value)
                 
-                if shouldSwap(bars[i].value, bars[i + 1].value) {
+                if shouldSwap(workingBars[i].value, workingBars[i + 1].value) {
                     await swapBars(at: i, and: i + 1)
                     swapped = true
                 }
                 
-                bars[i].state = .unsorted
-                bars[i + 1].state = .unsorted
+                workingBars[i].state = .unsorted
+                workingBars[i + 1].state = .unsorted
+                publishIfNeeded()
             }
             
             if !swapped {
                 break
             }
             
-            bars[end].state = .sorted
+            workingBars[end].state = .sorted
+            publishIfNeeded()
             end -= 1
             swapped = false
             
@@ -785,29 +869,33 @@ class SortingViewModel: ObservableObject {
             for i in stride(from: end, through: start, by: -1) {
                 guard !Task.isCancelled else { break }
                 
-                bars[i].state = .comparing
-                bars[i + 1].state = .comparing
+                workingBars[i].state = .comparing
+                workingBars[i + 1].state = .comparing
+                publishIfNeeded()
                 
                 // Play comparison sound
-                playComparisonSound(value1: bars[i].value, value2: bars[i + 1].value)
+                playComparisonSound(value1: workingBars[i].value, value2: workingBars[i + 1].value)
                 
-                if shouldSwap(bars[i].value, bars[i + 1].value) {
+                if shouldSwap(workingBars[i].value, workingBars[i + 1].value) {
                     await swapBars(at: i, and: i + 1)
                     swapped = true
                 }
                 
-                bars[i].state = .unsorted
-                bars[i + 1].state = .unsorted
+                workingBars[i].state = .unsorted
+                workingBars[i + 1].state = .unsorted
+                publishIfNeeded()
             }
             
-            bars[start].state = .sorted
+            workingBars[start].state = .sorted
+            publishIfNeeded()
             start += 1
         }
         
         // Mark remaining unsorted as sorted
         for i in start...end {
-            bars[i].state = .sorted
+            workingBars[i].state = .sorted
         }
+        publishIfNeeded()
     }
     
     // MARK: - Persistence
