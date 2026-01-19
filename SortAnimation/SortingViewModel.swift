@@ -24,12 +24,17 @@ class SortingViewModel: ObservableObject {
     private var lastPublishTime = Date()
     private let publishInterval: TimeInterval = 1.0 / 60.0 // 60fps
     
-    // Statistics tracking
+    // Statistics tracking - throttled for performance
     @Published var comparisonCount: Int = 0
     @Published var swapCount: Int = 0
     @Published var arrayAccessCount: Int = 0
     @Published var elapsedTime: TimeInterval = 0
     private var sortStartTime: Date?
+    
+    // Working statistics (not published, updated frequently)
+    private var workingComparisonCount: Int = 0
+    private var workingSwapCount: Int = 0
+    private var workingArrayAccessCount: Int = 0
     
     // Color scheme
     @Published var colorSchemeType: ColorSchemeType = .educational {
@@ -98,6 +103,11 @@ class SortingViewModel: ObservableObject {
         elapsedTime = 0
         sortStartTime = nil
         
+        // Reset working statistics
+        workingComparisonCount = 0
+        workingSwapCount = 0
+        workingArrayAccessCount = 0
+        
         let values = Array(1...numberOfElements).shuffled()
         bars.removeAll(keepingCapacity: true) // Keep capacity for reuse
         bars.reserveCapacity(numberOfElements) // Ensure capacity
@@ -143,6 +153,11 @@ class SortingViewModel: ObservableObject {
         elapsedTime = 0
         sortStartTime = Date()
         
+        // Initialize working statistics
+        workingComparisonCount = 0
+        workingSwapCount = 0
+        workingArrayAccessCount = 0
+        
         sortTask = Task {
             // Update elapsed time periodically
             let timerTask = Task {
@@ -184,7 +199,7 @@ class SortingViewModel: ObservableObject {
                 for index in workingBars.indices {
                     workingBars[index].state = .sorted
                 }
-                // Force final publish
+                // Force final publish (includes statistics)
                 publishNow()
                 
                 // Final elapsed time update
@@ -204,6 +219,10 @@ class SortingViewModel: ObservableObject {
         let now = Date()
         if now.timeIntervalSince(lastPublishTime) >= publishInterval {
             bars = workingBars
+            // Also publish statistics at the same throttled rate
+            comparisonCount = workingComparisonCount
+            swapCount = workingSwapCount
+            arrayAccessCount = workingArrayAccessCount
             lastPublishTime = now
         }
     }
@@ -211,21 +230,24 @@ class SortingViewModel: ObservableObject {
     /// Force immediate publish (used for final state)
     private func publishNow() {
         bars = workingBars
+        comparisonCount = workingComparisonCount
+        swapCount = workingSwapCount
+        arrayAccessCount = workingArrayAccessCount
         lastPublishTime = Date()
     }
     
     // MARK: - Statistics Helpers
     
     private func incrementComparison() {
-        comparisonCount += 1
+        workingComparisonCount += 1
     }
     
     private func incrementSwap() {
-        swapCount += 1
+        workingSwapCount += 1
     }
     
     private func incrementArrayAccess(_ count: Int = 1) {
-        arrayAccessCount += count
+        workingArrayAccessCount += count
     }
     
     private func bubbleSort() async {
