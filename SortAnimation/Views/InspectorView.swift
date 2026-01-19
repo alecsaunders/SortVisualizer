@@ -75,6 +75,37 @@ struct InspectorView: View {
                 
                 Divider()
                 
+                // Sound Section
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Sound")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        Toggle("", isOn: $viewModel.soundEnabled)
+                            .labelsHidden()
+                            .toggleStyle(SwitchToggleStyle())
+                    }
+                    
+                    if viewModel.soundEnabled {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Volume")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Slider(value: $viewModel.soundVolume, in: 0...1)
+                            
+                            Text("Sustain")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                            Slider(value: $viewModel.soundSustain, in: 0...1)
+                        }
+                    }
+                }
+                
+                Divider()
+                
                 // Color Scheme Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Color Scheme")
@@ -175,68 +206,6 @@ struct InspectorView: View {
                     }
                 }
                 
-                Divider()
-                
-                // Sound Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Sound")
-                        .font(.headline)
-                    
-                    Toggle("Enable Sound", isOn: $viewModel.soundEnabled)
-                    
-                    if viewModel.soundEnabled {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Volume")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Slider(value: $viewModel.soundVolume, in: 0...1)
-                            
-                            Text("Sustain")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 4)
-                            Slider(value: $viewModel.soundSustain, in: 0...1)
-                        }
-                    }
-                }
-                
-                Divider()
-                
-                // Statistics Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Statistics")
-                        .font(.headline)
-                    
-                    if viewModel.isSorting || viewModel.comparisonCount > 0 {
-                        VStack(alignment: .leading, spacing: 8) {
-                            StatisticRow(
-                                label: "Comparisons",
-                                value: "\(viewModel.comparisonCount)"
-                            )
-                            
-                            StatisticRow(
-                                label: "Swaps",
-                                value: "\(viewModel.swapCount)"
-                            )
-                            
-                            StatisticRow(
-                                label: "Array Access",
-                                value: "\(viewModel.arrayAccessCount)"
-                            )
-                            
-                            StatisticRow(
-                                label: "Time",
-                                value: String(format: "%.2f s", viewModel.elapsedTime)
-                            )
-                        }
-                    } else {
-                        Text("Run an algorithm to see statistics")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Spacer()
             }
             .padding()
         }

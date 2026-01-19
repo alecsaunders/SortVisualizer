@@ -53,6 +53,7 @@ A high-performance macOS app built with SwiftUI that visualizes sorting algorith
 All configuration controls are accessed via the Inspector sidebar (toggle with toolbar button):
 
 #### Configuration
+- **Sort Direction** - Choose ascending or descending order
 - **Elements** (10-200, step 10) - Number of bars to sort
 - **Speed** (0-1000 ms, step 10) - Delay between operations
 
@@ -70,7 +71,7 @@ All configuration controls are accessed via the Inspector sidebar (toggle with t
   - Pointer: Purple
   - Sorted: Green
 - **Custom** - Choose your own colors for each state
-- **Live Preview** - See color changes in real-time
+- **Preview** - Visual preview of all bar states in current color scheme
 
 **Bar States:**
 - **Unsorted** - Elements not yet processed
@@ -80,15 +81,9 @@ All configuration controls are accessed via the Inspector sidebar (toggle with t
 - **Sorted** - Elements confirmed in final position
 
 #### Sound
-- **Enable/Disable** - Toggle sound effects on/off
+- **Toggle switch** - Enable/disable sound effects (inline with header)
 - **Volume** - Adjust sound volume (0-100%)
 - **Sustain** - Control envelope duration
-
-#### Statistics
-- **Comparisons** - Number of element comparisons made
-- **Swaps** - Number of element swaps performed
-- **Array Access** - Total array read/write operations
-- **Time** - Elapsed time in seconds
 
 ## Technical Details
 
