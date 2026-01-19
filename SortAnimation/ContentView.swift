@@ -29,6 +29,7 @@ struct ContentView: View {
                 maxValue: viewModel.numberOfElements,
                 colors: viewModel.currentColors
             )
+            .id(viewModel.sweepVersion) // Force redraw when sweep version changes
             .padding(20)
             
             // Statistics overlay (top-left corner like Sound of Sorting)

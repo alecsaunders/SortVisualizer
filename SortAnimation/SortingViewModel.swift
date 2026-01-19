@@ -18,6 +18,7 @@ class SortingViewModel: ObservableObject {
     @Published var numberOfElements: Int = 100
     @Published var isSorting: Bool = false
     @Published var isPaused: Bool = false
+    @Published var sweepVersion: Int = 0 // Force Canvas redraw during sweep
     
     // Performance optimization: working copy for frequent mutations
     private var workingBars: [Bar] = []
@@ -195,16 +196,15 @@ class SortingViewModel: ObservableObject {
             timerTask.cancel()
             
             if !Task.isCancelled {
-                // Mark all bars as sorted
+                // Mark all bars as sorted (final state)
                 for index in workingBars.indices {
                     workingBars[index].state = .sorted
                 }
-                
-                // Force final publish immediately to show all green bars
                 publishNow()
                 
-                // Add a brief pause to let users see the final sorted state
-                try? await Task.sleep(for: .milliseconds(100))
+                // Final sweep animation (Sound of Sorting style)
+                // Goes through each bar sequentially to confirm sort completion
+                await finalSweep()
                 
                 // Final elapsed time update
                 if let startTime = sortStartTime {
@@ -214,6 +214,35 @@ class SortingViewModel: ObservableObject {
                 isSorting = false
             }
         }
+    }
+    
+    /// Final sweep animation - highlights each bar in sequence with sound
+    /// This provides visual and audio confirmation that sorting is complete
+    private func finalSweep() async {
+        // Calculate sweep speed: faster for fewer elements, capped at reasonable limits
+        let perBarDelay = max(5, min(50, 3000 / workingBars.count))
+        
+        for index in workingBars.indices {
+            guard !Task.isCancelled else { break }
+            
+            // Highlight current bar (red)
+            workingBars[index].state = .comparing
+            bars = workingBars
+            sweepVersion += 1 // Force Canvas redraw
+            
+            // Play tone for this bar
+            playComparisonSound(value1: workingBars[index].value, value2: workingBars[index].value)
+            
+            // Brief pause to show red bar
+            try? await Task.sleep(for: .milliseconds(perBarDelay))
+            
+            // Return to sorted state (green)
+            workingBars[index].state = .sorted
+        }
+        
+        // Final publish to ensure all bars are green
+        bars = workingBars
+        sweepVersion += 1
     }
     
     // MARK: - Performance Optimization
