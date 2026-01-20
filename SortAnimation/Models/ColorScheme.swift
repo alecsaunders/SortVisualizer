@@ -36,9 +36,9 @@ struct ColorSchemeColors: Equatable, Codable {
     static let classic = ColorSchemeColors(
         unsorted: CodableColor(.white),
         comparing: CodableColor(.red),
-        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green (Sound of Sorting standard)
+        pivot: CodableColor(Color(red: 0.0, green: 0.8, blue: 0.0)), // Green (Sound of Sorting standard - target position)
         pointer: CodableColor(Color(red: 0.0, green: 0.7, blue: 0.9)), // Cyan/Light Blue (Sound of Sorting standard)
-        sorted: CodableColor(.white)
+        sorted: CodableColor(.white) // White - same as unsorted in Sound of Sorting
     )
     
     static let vibrant = ColorSchemeColors(

@@ -134,6 +134,6 @@ struct Bar: Identifiable, Equatable {
     ///   - rhs: The right-hand side bar
     /// - Returns: `true` if both bars have the same ID
     static func == (lhs: Bar, rhs: Bar) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.state == rhs.state && lhs.offset == rhs.offset
     }
 }

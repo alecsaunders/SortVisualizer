@@ -1050,39 +1050,57 @@ class SortingViewModel: ObservableObject {
             guard !Task.isCancelled else { break }
             
             let item = workingBars[cycleStart]
-            workingBars[cycleStart].state = .pointer
-            publishIfNeeded()
-            await delay(Int(speed))
+            workingBars[cycleStart].state = .pointer  // Cyan - marks cycle start
+            publishNow()
             
             // Find position where we put the item
             var pos = cycleStart
             for i in (cycleStart + 1)..<n {
                 guard !Task.isCancelled else { break }
                 
-                workingBars[i].state = .comparing
-                publishIfNeeded()
-                await delay(Int(speed / 2))
+                // Skip already sorted elements
+                if workingBars[i].state == .sorted {
+                    if compare(workingBars[i].value, item.value) {
+                        pos += 1
+                    }
+                    continue
+                }
+                
+                workingBars[i].state = .comparing  // Red - current comparison
+                publishNow()
                 
                 playComparisonSound(value1: workingBars[i].value, value2: item.value)
+                await delay(Int(speed))
                 
                 if compare(workingBars[i].value, item.value) {
                     pos += 1
                 }
                 
+                // Reset to unsorted
                 workingBars[i].state = .unsorted
-                publishIfNeeded()
+                publishNow()
             }
             
             // If item is already in correct position
             if pos == cycleStart {
-                workingBars[cycleStart].state = .sorted
-                publishIfNeeded()
+                workingBars[cycleStart].state = .sorted  // Green - in final position
+                publishNow()
                 continue
             }
             
             // Skip duplicates
             while pos < n && item.value == workingBars[pos].value {
                 pos += 1
+            }
+            
+            // Mark target position briefly with pivot color (green in Classic)
+            if pos < n && pos != cycleStart {
+                print("🟢 Setting pivot state at index \(pos), current state: \(workingBars[pos].state)")
+                workingBars[pos].state = .pivot
+                publishNow()
+                print("🟢 After setting: \(workingBars[pos].state), bars[\(pos)].state: \(bars[pos].state)")
+                await delay(Int(speed * 2))  // Show pivot longer
+                print("🟢 After delay, about to swap")
             }
             
             // Put the item to its right position
@@ -1092,27 +1110,55 @@ class SortingViewModel: ObservableObject {
             
             // Rotate rest of the cycle
             var currentPos = pos
+            var iterationCount = 0
+            
             while currentPos != cycleStart {
+                iterationCount += 1
+                
+                if iterationCount > n {
+                    break
+                }
+                
                 guard !Task.isCancelled else { break }
                 
+                // The item at cycleStart is what was displaced by the last swap
                 let currentItem = workingBars[cycleStart]
-                pos = cycleStart
                 
-                // Find position where we put the element
+                // Keep cycleStart marked as pointer (cyan)
+                workingBars[cycleStart].state = .pointer
+                publishNow()
+                
+                // Find where this displaced item should go
+                pos = cycleStart
                 for i in (cycleStart + 1)..<n {
                     guard !Task.isCancelled else { break }
                     
-                    workingBars[i].state = .comparing
-                    publishIfNeeded()
+                    // Skip already sorted elements
+                    if workingBars[i].state == .sorted {
+                        if compare(workingBars[i].value, currentItem.value) {
+                            pos += 1
+                        }
+                        continue
+                    }
+                    
+                    workingBars[i].state = .comparing  // Red - current comparison
+                    publishNow()
                     
                     playComparisonSound(value1: workingBars[i].value, value2: currentItem.value)
+                    await delay(Int(speed))
                     
                     if compare(workingBars[i].value, currentItem.value) {
                         pos += 1
                     }
                     
+                    // Reset to unsorted
                     workingBars[i].state = .unsorted
-                    publishIfNeeded()
+                    publishNow()
+                }
+                
+                // If the position equals cycleStart, the cycle is complete!
+                if pos == cycleStart {
+                    break
                 }
                 
                 // Skip duplicates
@@ -1120,23 +1166,36 @@ class SortingViewModel: ObservableObject {
                     pos += 1
                 }
                 
-                // Put the item to its right position
-                if pos < n && currentItem.value != workingBars[pos].value {
-                    await swapBars(at: cycleStart, and: pos)
+                // Safety check for bounds
+                if pos >= n {
+                    break
                 }
+                
+                // Mark target position briefly with pivot color
+                workingBars[pos].state = .pivot
+                publishNow()
+                await delay(Int(speed * 2))  // Show pivot longer
+                
+                // Swap to continue the cycle
+                await swapBars(at: cycleStart, and: pos)
+                
+                // Keep cycleStart marked as pointer after swap
+                workingBars[cycleStart].state = .pointer
+                publishNow()
                 
                 currentPos = pos
             }
             
+            // Mark this position as sorted (green) - it's now in final position
             workingBars[cycleStart].state = .sorted
-            publishIfNeeded()
+            publishNow()
         }
         
         // Mark last element as sorted
         if n > 0 {
             workingBars[n - 1].state = .sorted
         }
-        publishIfNeeded()
+        publishNow()
     }
     
     // MARK: - Tim Sort
