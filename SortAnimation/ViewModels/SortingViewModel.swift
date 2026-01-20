@@ -372,13 +372,13 @@ class SortingViewModel: ObservableObject {
             
             var targetIndex = i
             workingBars[targetIndex].state = .comparing
-            publishIfNeeded()
+            publishNow()
             
             for j in (i + 1)..<n {
                 guard !Task.isCancelled else { break }
                 
                 workingBars[j].state = .comparing
-                publishIfNeeded()
+                publishNow()
                 await delay(Int(speed / 2))
                 
                 playComparisonSound(value1: workingBars[j].value, value2: workingBars[targetIndex].value)
@@ -394,7 +394,7 @@ class SortingViewModel: ObservableObject {
                         resetComparingBars(at: j)
                     }
                 }
-                publishIfNeeded()
+                publishNow()
             }
             
             if targetIndex != i {
@@ -402,7 +402,7 @@ class SortingViewModel: ObservableObject {
             }
             
             workingBars[i].state = .sorted
-            publishIfNeeded()
+            publishNow()
         }
     }
     
@@ -526,30 +526,41 @@ class SortingViewModel: ObservableObject {
     }
     
     private func mergeSort() async {
+        print("🔷 Starting Merge Sort with \(workingBars.count) elements")
         await mergeSortHelper(start: 0, end: workingBars.count - 1)
+        print("✅ Merge Sort complete")
     }
     
     private func mergeSortHelper(start: Int, end: Int) async {
         guard start < end, !Task.isCancelled else { return }
         
         let mid = start + (end - start) / 2
+        print("📊 Dividing range [\(start)..\(end)] at mid=\(mid)")
         
         // Sort left half
+        print("  ⬅️ Sorting left half [\(start)..\(mid)]")
         await mergeSortHelper(start: start, end: mid)
         
         // Sort right half
+        print("  ➡️ Sorting right half [\(mid + 1)..\(end)]")
         await mergeSortHelper(start: mid + 1, end: end)
         
         // Merge the two halves
+        print("  🔀 Merging [\(start)..\(mid)] and [\(mid + 1)..\(end)]")
         await merge(start: start, mid: mid, end: end)
     }
     
     private func merge(start: Int, mid: Int, end: Int) async {
         guard !Task.isCancelled else { return }
         
+        print("    🔄 Merge started: range [\(start)..\(end)], mid=\(mid)")
+        
         // Create copies of the subarrays
         let leftArray = Array(workingBars[start...mid])
         let rightArray = Array(workingBars[(mid + 1)...end])
+        
+        print("      Left:  [\(leftArray.map { String($0.value) }.joined(separator: ", "))]")
+        print("      Right: [\(rightArray.map { String($0.value) }.joined(separator: ", "))]")
         
         var i = 0, j = 0, k = start
         
@@ -557,33 +568,37 @@ class SortingViewModel: ObservableObject {
         while i < leftArray.count && j < rightArray.count {
             guard !Task.isCancelled else { break }
             
+            print("      Comparing: left[\(i)]=\(leftArray[i].value) vs right[\(j)]=\(rightArray[j].value) → position [\(k)]")
             playComparisonSound(value1: leftArray[i].value, value2: rightArray[j].value)
             
             if compareOrEqual(leftArray[i].value, rightArray[j].value) {
+                print("        ✓ Taking left[\(i)]=\(leftArray[i].value)")
                 workingBars[k] = leftArray[i]
                 i += 1
             } else {
+                print("        ✓ Taking right[\(j)]=\(rightArray[j].value)")
                 workingBars[k] = rightArray[j]
                 j += 1
             }
             
             workingBars[k].state = .comparing
-            publishIfNeeded()
+            publishNow()
             try? await Task.sleep(for: .milliseconds(Int(speed)))
             workingBars[k].state = .unsorted
-            publishIfNeeded()
+            publishNow()
             k += 1
         }
         
         // Copy remaining elements from left array
         while i < leftArray.count {
             guard !Task.isCancelled else { break }
+            print("      Copying remaining left[\(i)]=\(leftArray[i].value) → position [\(k)]")
             workingBars[k] = leftArray[i]
             workingBars[k].state = .comparing
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed))
             workingBars[k].state = .unsorted
-            publishIfNeeded()
+            publishNow()
             i += 1
             k += 1
         }
@@ -591,15 +606,18 @@ class SortingViewModel: ObservableObject {
         // Copy remaining elements from right array
         while j < rightArray.count {
             guard !Task.isCancelled else { break }
+            print("      Copying remaining right[\(j)]=\(rightArray[j].value) → position [\(k)]")
             workingBars[k] = rightArray[j]
             workingBars[k].state = .comparing
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed))
             workingBars[k].state = .unsorted
-            publishIfNeeded()
+            publishNow()
             j += 1
             k += 1
         }
+        
+        print("    ✅ Merge complete: [\(workingBars[start...end].map { String($0.value) }.joined(separator: ", "))]")
     }
     
     private func radixSort() async {
@@ -838,27 +856,37 @@ class SortingViewModel: ObservableObject {
                 
                 let temp = workingBars[i]
                 workingBars[i].state = .comparing
-                publishIfNeeded()
+                publishNow()
                 var j = i
                 
                 while j >= gap && shouldSwap(workingBars[j - gap].value, temp.value) {
                     guard !Task.isCancelled else { break }
                     
+                    // Show both elements being compared
                     workingBars[j - gap].state = .comparing
                     workingBars[j].state = .comparing
-                    publishIfNeeded()
+                    publishNow()
                     
                     playComparisonSound(value1: workingBars[j - gap].value, value2: temp.value)
                     
                     await swapBars(at: j, and: j - gap)
                     
+                    // Reset both after swap
                     workingBars[j].state = .unsorted
-                    publishIfNeeded()
+                    workingBars[j - gap].state = .unsorted
+                    publishNow()
                     j -= gap
                 }
                 
-                workingBars[j].state = .unsorted
-                publishIfNeeded()
+                // Reset the original position
+                if j < n {
+                    workingBars[j].state = .unsorted
+                }
+                // Reset the initial i position if not part of the comparison
+                if i < n && i != j {
+                    workingBars[i].state = .unsorted
+                }
+                publishNow()
             }
             
             gap /= 2
@@ -985,17 +1013,32 @@ class SortingViewModel: ObservableObject {
             if index == 0 {
                 index += 1
             } else {
-                visualizeComparison(at: index, and: index - 1)
+                // Show comparison between current and previous element
+                workingBars[index].state = .comparing
+                workingBars[index - 1].state = .comparing
+                publishNow()
+                await delay(Int(speed / 2))
+                
+                playComparisonSound(value1: workingBars[index - 1].value, value2: workingBars[index].value)
                 
                 if shouldSwap(workingBars[index - 1].value, workingBars[index].value) {
+                    // Need to swap - move back
                     await swapBars(at: index, and: index - 1)
+                    
+                    // Reset both positions after swap
+                    workingBars[index].state = .unsorted
+                    workingBars[index - 1].state = .unsorted
+                    publishNow()
+                    
                     index -= 1
                 } else {
+                    // In correct order - move forward
+                    workingBars[index].state = .unsorted
+                    workingBars[index - 1].state = .unsorted
+                    publishNow()
+                    
                     index += 1
                 }
-                
-                resetComparingBars(at: index, index - 1)
-                publishIfNeeded()
             }
         }
         
@@ -1218,7 +1261,7 @@ class SortingViewModel: ObservableObject {
                     workingBars[i].state = .pointer
                 }
             }
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed))
             
             // Reset pointer state
@@ -1261,8 +1304,6 @@ class SortingViewModel: ObservableObject {
             guard i < workingBars.count else { break }
             
             let key = workingBars[i]
-            workingBars[i].state = .comparing
-            publishIfNeeded()
             var j = i - 1
             
             while j >= left {
@@ -1270,25 +1311,23 @@ class SortingViewModel: ObservableObject {
                 guard j < workingBars.count else { break }
                 
                 if shouldSwap(workingBars[j].value, key.value) {
+                    // Show comparison
                     workingBars[j].state = .comparing
                     workingBars[j + 1].state = .comparing
-                    publishIfNeeded()
+                    publishNow()
                     
                     playComparisonSound(value1: workingBars[j].value, value2: key.value)
                     
                     await swapBars(at: j, and: j + 1)
                     
+                    // Reset both bars after swap
+                    workingBars[j].state = .unsorted
                     workingBars[j + 1].state = .unsorted
-                    publishIfNeeded()
+                    publishNow()
                     j -= 1
                 } else {
                     break
                 }
-            }
-            
-            if i < workingBars.count {
-                workingBars[i].state = .unsorted
-                publishIfNeeded()
             }
         }
     }
@@ -1317,10 +1356,10 @@ class SortingViewModel: ObservableObject {
             }
             
             workingBars[k].state = .comparing
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed))
             workingBars[k].state = .unsorted
-            publishIfNeeded()
+            publishNow()
             k += 1
         }
         
@@ -1330,10 +1369,10 @@ class SortingViewModel: ObservableObject {
             
             workingBars[k] = leftArray[i]
             workingBars[k].state = .comparing
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed))
             workingBars[k].state = .unsorted
-            publishIfNeeded()
+            publishNow()
             i += 1
             k += 1
         }
@@ -1344,10 +1383,10 @@ class SortingViewModel: ObservableObject {
             
             workingBars[k] = rightArray[j]
             workingBars[k].state = .comparing
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed))
             workingBars[k].state = .unsorted
-            publishIfNeeded()
+            publishNow()
             j += 1
             k += 1
         }
