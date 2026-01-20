@@ -116,6 +116,10 @@ class SortingViewModel: ObservableObject {
         
         // Initialize working copy
         workingBars = bars
+        
+        // Publish immediately to ensure UI updates with new bars
+        publishNow()
+        
         lastPublishTime = Date()
     }
     
@@ -714,42 +718,50 @@ class SortingViewModel: ObservableObject {
         
         let pivot = workingBars[high]
         workingBars[high].state = .pivot
-        publishIfNeeded()
+        publishNow()
         var i = low - 1
         
         for j in low..<high {
             guard !Task.isCancelled else { break }
             
             workingBars[j].state = .comparing
-            if i >= low {
+            if i >= low && i < workingBars.count {
                 workingBars[i].state = .pointer
             }
-            publishIfNeeded()
+            publishNow()
             await delay(Int(speed / 2))
             
             playComparisonSound(value1: workingBars[j].value, value2: pivot.value)
             
             if compare(workingBars[j].value, pivot.value) {
                 // Reset previous pointer
-                resetComparingBars(at: i)
+                if i >= 0 && i < workingBars.count {
+                    workingBars[i].state = .unsorted
+                }
                 i += 1
                 if i != j {
                     await swapBars(at: i, and: j)
                 }
             }
             
-            // Clear states
-            resetComparingBars(at: i, j)
-            publishIfNeeded()
+            // Clear states - reset both comparing and pointer
+            workingBars[j].state = .unsorted
+            if i >= 0 && i < workingBars.count {
+                workingBars[i].state = .unsorted
+            }
+            publishNow()
         }
         
         // Reset pivot state before swap
         workingBars[high].state = .unsorted
-        publishIfNeeded()
+        publishNow()
         
+        // Place pivot in correct position
         await swapBars(at: i + 1, and: high)
+        
+        // Mark pivot as sorted - it's now in its final position
         workingBars[i + 1].state = .sorted
-        publishIfNeeded()
+        publishNow()
         
         return i + 1
     }
